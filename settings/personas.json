@@ -1,7 +1,7 @@
 {
   "helga": {
     "name": "Helga",
-    "lang": "fr-FR",
+    "lang": "de-DE",
     "voice": "Aoede",
     "model": "models/gemini-3.8-live",
     "volume": 100,
