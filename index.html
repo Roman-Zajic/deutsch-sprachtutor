@@ -103,47 +103,57 @@ body {
   gap: 14px;
 }
 
-/* ── TOP CONTROL BAR ────────────────────────────────── */
+/* ── TOP CONTROL BAR (STRICT SINGLE LINE) ───────────── */
 .card {
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 16px 20px;
+  padding: 14px 20px;
   box-shadow: var(--shadow);
 }
 .card-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
+  flex-wrap: nowrap; /* Forces single line */
+  gap: 16px;
+  overflow-x: auto;  /* Graceful scroll if viewport is extremely narrow */
+  scrollbar-width: none;
 }
+.card-header-row::-webkit-scrollbar { display: none; }
+
 .header-left {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .header-right {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
+
 .card-title {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--teal-900);
+  white-space: nowrap;
 }
 [data-theme="dark"] .card-title { color: var(--teal-100); }
 
-/* Persona dropdown positioned inline next to title */
 .persona-select {
   height: 36px;
   width: auto;
-  min-width: 124px;
+  min-width: 110px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 6px 10px;
+  flex-shrink: 0;
 }
 
 /* ── STATUS & AUDIO METER ───────────────────────────── */
@@ -158,6 +168,8 @@ body {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .dot {
   width: 9px;
@@ -173,6 +185,7 @@ body {
   align-items: center;
   gap: 2px;
   height: 14px;
+  flex-shrink: 0;
 }
 .audio-meter-bar {
   width: 3px;
@@ -197,6 +210,7 @@ body {
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: background 130ms, border-color 130ms, opacity 130ms;
 }
 .btn:active { opacity: .88; }
@@ -521,7 +535,7 @@ select.input { cursor: pointer; }
 
 <div class="wrap">
 
-  <!-- TOP BAR: TITLE, PERSONA DROPDOWN, STATUS & ACTION -->
+  <!-- TOP BAR: ALL CONTROLS LOCKED ONTO A SINGLE LINE -->
   <div class="card">
     <div class="card-header-row">
       <div class="header-left">
@@ -899,7 +913,7 @@ async function startSession() {
     const serverContent = msg.serverContent;
     if (!serverContent) return;
 
-    // 1. PURE USER SPOKEN WORDS
+    // 1. Spoken user transcription
     const userText = serverContent.inputTranscription?.text;
     if (userText && userText.trim()) {
       if (!currentUserMsgEl) {
@@ -910,7 +924,7 @@ async function startSession() {
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 2. AUDIO STREAM
+    // 2. Audio playback stream
     if (serverContent.modelTurn?.parts) {
       isAssistantSpeaking = true;
       currentUserMsgEl = null;
@@ -923,7 +937,7 @@ async function startSession() {
       }
     }
 
-    // 3. PURE ASSISTANT SPOKEN WORDS
+    // 3. Spoken assistant transcription
     const assistantText = serverContent.outputTranscription?.text;
     if (assistantText) {
       currentUserMsgEl = null;
@@ -935,7 +949,7 @@ async function startSession() {
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Barge-in
+    // Barge-in interruption
     if (serverContent.interrupted) {
       stopAudioPlayback();
       currentAssistantMsgEl = null;
