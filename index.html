@@ -103,7 +103,7 @@ body {
   gap: 14px;
 }
 
-/* ── TOP CONTROL BAR (STRICT SINGLE LINE) ───────────── */
+/* ── TOP CONTROL BAR ────────────────────────────────── */
 .card {
   background: var(--surface-card);
   border: 1px solid var(--border);
@@ -219,8 +219,15 @@ body {
 [data-theme="dark"] .btn-primary { background: var(--teal-400); color: var(--ink); border-color: var(--teal-400); }
 [data-theme="dark"] .btn-primary:hover { background: var(--teal-100); border-color: var(--teal-100); }
 
+.btn-secondary { background: transparent; color: var(--teal-900); border-color: var(--teal-900); }
+.btn-secondary:hover { background: rgba(0,90,90,.05); }
+[data-theme="dark"] .btn-secondary { color: var(--teal-400); border-color: var(--teal-400); }
+[data-theme="dark"] .btn-secondary:hover { background: rgba(80,193,193,.1); }
+
 .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
 .btn-danger:hover { background: #A01830; }
+
+.btn-sm { padding: 5px 12px; font-size: 0.75rem; }
 
 /* ── COLLAPSIBLE SETTINGS ACCORDION ─────────────────── */
 .accordion {
@@ -267,17 +274,18 @@ body {
   padding-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .settings-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .settings-section-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -289,19 +297,12 @@ body {
 }
 [data-theme="dark"] .settings-section-header { color: var(--teal-400); }
 
-.settings-grid-general {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 768px) { .settings-grid-general { grid-template-columns: 1fr; } }
-
-.settings-grid-lang-voice {
+.settings-grid-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-@media (max-width: 640px) { .settings-grid-lang-voice { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .settings-grid-2col { grid-template-columns: 1fr; } }
 
 .field-label {
   font-size: 0.75rem;
@@ -312,21 +313,6 @@ body {
   margin-bottom: 4px;
   display: block;
 }
-
-.refresh-models-btn {
-  background: none;
-  border: none;
-  font-family: var(--font);
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--teal-700);
-  cursor: pointer;
-  padding: 0 4px;
-  text-decoration: underline;
-  transition: opacity 120ms;
-}
-.refresh-models-btn:hover { opacity: 0.8; }
-[data-theme="dark"] .refresh-models-btn { color: var(--teal-400); }
 
 .input {
   font-family: var(--font);
@@ -389,11 +375,6 @@ select.input { cursor: pointer; }
 [data-theme="dark"] .tool-toggle-label input[type="checkbox"] {
   accent-color: var(--teal-400);
 }
-.tool-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: -4px;
-}
 
 .textarea {
   font-family: var(--font);
@@ -412,6 +393,12 @@ select.input { cursor: pointer; }
 .textarea:focus { border-color: var(--teal-700); box-shadow: 0 0 0 3px rgba(0,130,130,.15); }
 [data-theme="dark"] .textarea { background: var(--surface-in); }
 [data-theme="dark"] .textarea:focus { border-color: var(--teal-400); box-shadow: 0 0 0 3px rgba(80,193,193,.20); }
+
+.persona-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
 
 /* ── CHAT LOG ────────────────────────────────────────── */
 .chat-window {
@@ -587,8 +574,7 @@ select.input { cursor: pointer; }
       <div class="header-left">
         <div class="card-title">Virtual Assistant</div>
         <select id="personaSelect" class="input persona-select" aria-label="Select Assistant">
-          <option value="helga">Helga</option>
-          <option value="jean-paul">Jean-Paul</option>
+          <!-- Populated dynamically -->
         </select>
       </div>
 
@@ -622,19 +608,27 @@ select.input { cursor: pointer; }
     <div class="accordion-body">
       <div class="accordion-body-inner">
 
-        <!-- General Settings Section -->
+        <!-- Access Keys Section -->
         <div class="settings-section">
-          <div class="settings-section-header">General Settings</div>
-          <div class="settings-grid-general">
+          <div class="settings-section-header">Access Keys</div>
+          <div class="settings-grid-2col">
             <div>
               <label class="field-label">Gemini API Key</label>
-              <input type="password" id="apiKey" class="input" placeholder="Enter API key...">
+              <input type="password" id="apiKey" class="input" placeholder="Enter Gemini key...">
             </div>
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <label class="field-label" style="margin-bottom:0;">Live Conversational Model</label>
-                <button type="button" id="refreshModelsBtn" class="refresh-models-btn" onclick="detectAvailableLiveModels(apiKeyInput.value.trim())" title="Detect live conversational models supported by your API key">⟳ Detect</button>
-              </div>
+              <label class="field-label">GitHub PAT</label>
+              <input type="password" id="ghToken" class="input" placeholder="ghp_...">
+            </div>
+          </div>
+        </div>
+
+        <!-- Persona Configuration Section -->
+        <div class="settings-section">
+          <div class="settings-section-header">Persona Configuration</div>
+          <div class="settings-grid-2col">
+            <div>
+              <label class="field-label">Live Conversational Model</label>
               <select id="modelSelect" class="input">
                 <option value="models/gemini-3.8-live">Gemini 3.8 Live (Default)</option>
                 <option value="models/gemini-2.5-flash-native-audio-latest">Gemini 2.5 Flash Native Audio (Fallback)</option>
@@ -643,25 +637,12 @@ select.input { cursor: pointer; }
               </select>
             </div>
             <div>
-              <label class="field-label">Volume</label>
-              <div class="volume-control-wrapper">
-                <input type="range" id="volumeControl" class="volume-slider" min="0" max="100" value="100">
-                <span id="volumeVal" class="volume-val-display">100%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Language & Voice Configuration -->
-        <div class="settings-section">
-          <div class="settings-section-header">Language & Voice Configuration</div>
-          <div class="settings-grid-lang-voice">
-            <div>
               <label class="field-label">Input Language</label>
               <select id="langSelect" class="input">
                 <option value="de-DE">German (de-DE)</option>
                 <option value="fr-FR">French (fr-FR)</option>
                 <option value="en-US">English (en-US)</option>
+                <option value="es-ES">Spanish (es-ES)</option>
                 <option value="pl-PL">Polish (pl-PL)</option>
               </select>
             </div>
@@ -680,22 +661,27 @@ select.input { cursor: pointer; }
                 <option value="Algieba">Algieba (Male - Smooth)</option>
               </select>
             </div>
+            <div>
+              <label class="field-label">Volume</label>
+              <div class="volume-control-wrapper">
+                <input type="range" id="volumeControl" class="volume-slider" min="0" max="100" value="100">
+                <span id="volumeVal" class="volume-val-display">100%</span>
+              </div>
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label class="tool-toggle-label">
+                <input type="checkbox" id="googleSearchToggle" checked>
+                <span>Enable Google Search</span>
+              </label>
+            </div>
           </div>
           <div>
             <label class="field-label">Metaprompt (System Instruction)</label>
             <textarea id="systemPrompt" class="textarea"></textarea>
           </div>
-        </div>
-
-        <!-- Tools & Grounding Section -->
-        <div class="settings-section">
-          <div class="settings-section-header">Tools & Grounding</div>
-          <div>
-            <label class="tool-toggle-label">
-              <input type="checkbox" id="googleSearchToggle" checked>
-              <span>Enable Google Search Grounding</span>
-            </label>
-            <div class="tool-desc">Allows the assistant to search the web in real-time for up-to-date facts, current events, and live information.</div>
+          <div class="persona-actions">
+            <button class="btn btn-secondary btn-sm" onclick="saveCurrentPersona()">Save</button>
+            <button class="btn btn-primary btn-sm" onclick="saveAsNewPersona()">Save as New</button>
           </div>
         </div>
 
@@ -716,53 +702,51 @@ select.input { cursor: pointer; }
 </footer>
 
 <script>
-/* ── CONSTANTS & PRESETS ────────────────────────────── */
+/* ── CONSTANTS & DEFAULTS ────────────────────────────── */
 const DEFAULT_MODEL = "models/gemini-3.8-live";
 const FALLBACK_MODEL = "models/gemini-2.5-flash-native-audio-latest";
 const DEFAULT_VOICE = "Aoede";
+const GITHUB_REPO = "Roman-Zajic/deutsch-sprachtutor";
+const GITHUB_FILE_PATH = "settings/personas.json";
 
-// Valid Gemini Live voices
 const VALID_GEMINI_VOICES = [
   "Aoede", "Kore", "Autonoe", "Achernar", "Zephyr",
   "Charon", "Puck", "Fenrir", "Orus", "Algieba"
 ];
 
-const PRESETS = {
+// Fallback presets if GitHub fetch fails or file doesn't exist
+let PRESETS = {
   helga: {
     name: "Helga",
     lang: "de-DE",
-    voice: "Aoede", // Female
+    voice: "Aoede",
     model: "models/gemini-3.8-live",
-    instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
-
-The user is practicing German at the intermediate (B1/B2) level.
-Always transcribe and interpret the user's speech as German, even if their pronunciation is imperfect or contains an accent. Do not transcribe or interpret user speech as other languages.
-
-Rules for your responses:
-- Speak exclusively in natural, conversational German suitable for B1/B2 learners.
-- Engage in an active, supportive conversation.
-- If the user makes a grammatical or vocabulary mistake, briefly and gently correct it, then immediately continue the conversation naturally.
-- Answer questions the user asks and propose relevant follow-up questions to keep the dialogue flowing.
-- Keep your turns reasonably concise so the learner has maximum speaking time.`
+    volume: 100,
+    googleSearch: true,
+    instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.\n\nThe user is practicing German at the intermediate (B1/B2) level.\nAlways transcribe and interpret the user's speech as German, even if their pronunciation is imperfect or contains an accent. Do not transcribe or interpret user speech as other languages.\n\nRules for your responses:\n- Speak exclusively in natural, conversational German suitable for B1/B2 learners.\n- Engage in an active, supportive conversation.\n- If the user makes a grammatical or vocabulary mistake, briefly and gently correct it, then immediately continue the conversation naturally.\n- Answer questions the user asks and propose relevant follow-up questions to keep the dialogue flowing.\n- Keep your turns reasonably concise so the learner has maximum speaking time.`
   },
   "jean-paul": {
     name: "Jean-Paul",
     lang: "fr-FR",
-    voice: "Charon", // Male
+    voice: "Charon",
     model: "models/gemini-3.8-live",
-    instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
-
-The user is practicing French at the beginner/elementary (A1/A2) level.
-Always transcribe and interpret the user's speech as French, even if their pronunciation is accented or incomplete. Do not transcribe or interpret user speech as other languages.
-
-Rules for your responses:
-- Speak exclusively in clear, simple French appropriate for A1/A2 level learners (common words, clear syntax, moderate pace).
-- Be very patient and encouraging.
-- If the user makes a mistake, provide a quick, gentle correction, and continue smoothly.
-- Ask simple, clear questions to prompt the learner to respond.
-- Keep responses short to give the learner the floor to practice speaking.`
+    volume: 100,
+    googleSearch: true,
+    instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.\n\nThe user is practicing French at the beginner/elementary (A1/A2) level.\nAlways transcribe and interpret the user's speech as French, even if their pronunciation is accented or incomplete. Do not transcribe or interpret user speech as other languages.\n\nRules for your responses:\n- Speak exclusively in clear, simple French appropriate for A1/A2 level learners (common words, clear syntax, moderate pace).\n- Be very patient and encouraging.\n- If the user makes a mistake, provide a quick, gentle correction, and continue smoothly.\n- Ask simple, clear questions to prompt the learner to respond.\n- Keep responses short to give the learner the floor to practice speaking.`
   }
 };
+
+/* ── DOM ELEMENTS ────────────────────────────────────── */
+const apiKeyInput = document.getElementById("apiKey");
+const ghTokenInput = document.getElementById("ghToken");
+const personaSelect = document.getElementById("personaSelect");
+const modelSelect = document.getElementById("modelSelect");
+const langSelect = document.getElementById("langSelect");
+const voiceSelect = document.getElementById("voiceSelect");
+const promptInput = document.getElementById("systemPrompt");
+const volumeControl = document.getElementById("volumeControl");
+const volumeVal = document.getElementById("volumeVal");
+const googleSearchToggle = document.getElementById("googleSearchToggle");
 
 /* ── THEME SWITCHER ─────────────────────────────────── */
 function toggleTheme() {
@@ -779,28 +763,241 @@ if (savedTheme) {
   document.getElementById('theme-btn').textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
 }
 
-/* ── ACCORDION TOGGLE ───────────────────────────────── */
 function toggleAccordion(btn) {
   const expanded = btn.getAttribute('aria-expanded') === 'true';
   btn.setAttribute('aria-expanded', String(!expanded));
   btn.nextElementSibling.classList.toggle('open', !expanded);
 }
 
-/* ── DYNAMIC MODEL DETECTION (EXCLUDING TRANSLATION/TRANSCRIBE) ── */
-async function detectAvailableLiveModels(key, silent = false) {
-  if (!key) {
-    if (!silent) toast('warning', 'Key Required', 'Please enter your Gemini API key first.');
+/* ── BASE64 UTF-8 HELPERS ───────────────────────────── */
+function encodeUTF8toBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+  return btoa(binString);
+}
+function decodeBase64toUTF8(b64) {
+  const binString = atob(b64);
+  const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+/* ── GITHUB API LOGIC ───────────────────────────────── */
+let githubFileSha = null;
+
+async function fetchPersonasFromGitHub() {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}?ref=main`;
+  const token = ghTokenInput.value.trim();
+  const headers = { 'Accept': 'application/vnd.github.v3+json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  try {
+    const res = await fetch(url, { headers });
+    if (res.status === 404) {
+      console.info('settings/personas.json not found on GitHub. Using defaults.');
+      populatePersonaDropdown();
+      return;
+    }
+    if (!res.ok) throw new Error(`GitHub API Error: ${res.statusText}`);
+    
+    const data = await res.json();
+    githubFileSha = data.sha;
+    const jsonStr = decodeBase64toUTF8(data.content);
+    
+    const fetchedPersonas = JSON.parse(jsonStr);
+    if (Object.keys(fetchedPersonas).length > 0) {
+      PRESETS = fetchedPersonas;
+    }
+  } catch (err) {
+    console.error("GitHub Sync Failed:", err);
+  }
+  populatePersonaDropdown();
+}
+
+async function savePersonasToGitHub() {
+  const token = ghTokenInput.value.trim();
+  
+  if (!token) {
+    toast('error', 'GitHub Token Missing', 'Please enter your GitHub PAT to save changes.');
     return;
   }
-  const refreshBtn = document.getElementById("refreshModelsBtn");
-  if (refreshBtn) refreshBtn.textContent = "Detecting...";
+
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+  const jsonStr = JSON.stringify(PRESETS, null, 2);
+  const base64Content = encodeUTF8toBase64(jsonStr);
+
+  const payload = {
+    message: "Update personas via Virtual Assistant",
+    content: base64Content,
+    branch: "main"
+  };
+  if (githubFileSha) {
+    payload.sha = githubFileSha;
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      if (res.status === 409) {
+        toast('error', 'Conflict Error', 'File was modified elsewhere. Refresh to pull latest.');
+      } else {
+        throw new Error(`GitHub API Error: ${res.statusText}`);
+      }
+      return;
+    }
+
+    const data = await res.json();
+    githubFileSha = data.content.sha; // Update SHA for future saves
+    toast('success', 'Saved', 'Persona configuration committed to GitHub.');
+  } catch (err) {
+    console.error(err);
+    toast('error', 'Save Failed', err.message);
+  }
+}
+
+/* ── PERSONA MANAGEMENT ─────────────────────────────── */
+function populatePersonaDropdown() {
+  const currentVal = localStorage.getItem("va_persona") || Object.keys(PRESETS)[0];
+  personaSelect.innerHTML = "";
+  
+  for (const [key, preset] of Object.entries(PRESETS)) {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = preset.name;
+    personaSelect.appendChild(opt);
+  }
+
+  if (PRESETS[currentVal]) {
+    personaSelect.value = currentVal;
+  } else {
+    personaSelect.value = Object.keys(PRESETS)[0];
+  }
+  applyPersona(personaSelect.value);
+}
+
+function applyPersona(personaKey) {
+  const preset = PRESETS[personaKey];
+  if (!preset) return;
+
+  personaSelect.value = personaKey;
+  langSelect.value = preset.lang || "de-DE";
+  voiceSelect.value = preset.voice || DEFAULT_VOICE;
+
+  if (preset.model) {
+    if (![...modelSelect.options].some(o => o.value === preset.model)) {
+      const opt = document.createElement("option");
+      opt.value = preset.model;
+      opt.textContent = preset.model.replace("models/", "");
+      modelSelect.appendChild(opt);
+    }
+    modelSelect.value = preset.model;
+  }
+
+  const vol = preset.volume !== undefined ? preset.volume : 100;
+  volumeControl.value = vol;
+  volumeVal.textContent = `${vol}%`;
+  currentVolume = vol / 100;
+  if (playbackGainNode && playbackCtx) {
+    playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
+  }
+
+  googleSearchToggle.checked = preset.googleSearch !== false; // default to true
+  promptInput.value = preset.instruction || "";
+
+  localStorage.setItem("va_persona", personaKey);
+}
+
+function saveCurrentPersona() {
+  const key = personaSelect.value;
+  if (!PRESETS[key]) return;
+
+  PRESETS[key].lang = langSelect.value;
+  PRESETS[key].voice = voiceSelect.value;
+  PRESETS[key].model = modelSelect.value;
+  PRESETS[key].volume = parseInt(volumeControl.value, 10);
+  PRESETS[key].googleSearch = googleSearchToggle.checked;
+  PRESETS[key].instruction = promptInput.value;
+
+  savePersonasToGitHub();
+}
+
+function saveAsNewPersona() {
+  const newName = prompt("Enter a name for the new persona (e.g., 'Spanish Tutor'):");
+  if (!newName) return;
+
+  const newKey = newName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  if (PRESETS[newKey]) {
+    toast('warning', 'Persona Exists', 'A persona with this name already exists.');
+    return;
+  }
+
+  PRESETS[newKey] = {
+    name: newName,
+    lang: langSelect.value,
+    voice: voiceSelect.value,
+    model: modelSelect.value,
+    volume: parseInt(volumeControl.value, 10),
+    googleSearch: googleSearchToggle.checked,
+    instruction: promptInput.value
+  };
+
+  populatePersonaDropdown();
+  personaSelect.value = newKey;
+  applyPersona(newKey);
+  savePersonasToGitHub();
+}
+
+/* ── SETTINGS PERSISTENCE & INITIALIZATION ──────────── */
+apiKeyInput.value = localStorage.getItem("va_api_key") || "";
+ghTokenInput.value = localStorage.getItem("va_gh_token") || "";
+
+apiKeyInput.addEventListener("change", () => {
+  const key = apiKeyInput.value.trim();
+  localStorage.setItem("va_api_key", key);
+  if (key) detectAvailableLiveModels(key, true);
+});
+
+ghTokenInput.addEventListener("change", () => localStorage.setItem("va_gh_token", ghTokenInput.value.trim()));
+personaSelect.addEventListener("change", (e) => applyPersona(e.target.value));
+
+// Update local volume variable instantly when sliding (does not auto-save to github)
+volumeControl.addEventListener("input", (e) => {
+  const val = parseInt(e.target.value, 10);
+  volumeVal.textContent = `${val}%`;
+  currentVolume = val / 100;
+  if (playbackGainNode && playbackCtx) {
+    playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
+  }
+});
+
+// Boot Sequence
+window.addEventListener('DOMContentLoaded', async () => {
+  // Auto-query live models on load if API key is present
+  if (apiKeyInput.value.trim()) {
+    detectAvailableLiveModels(apiKeyInput.value.trim(), true);
+  }
+  
+  // Auto-pull configuration from GitHub
+  await fetchPersonasFromGitHub();
+});
+
+/* ── DYNAMIC MODEL DETECTION ── */
+async function detectAvailableLiveModels(key, silent = false) {
+  if (!key) return;
 
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=100`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     
-    // Filter conversational live models only
     const liveModels = (data.models || []).filter(m => {
       const isBidi = Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes("bidiGenerateContent");
       const name = (m.name || "").toLowerCase();
@@ -813,6 +1010,7 @@ async function detectAvailableLiveModels(key, silent = false) {
     if (liveModels.length > 0) {
       const currentSelected = modelSelect.value;
       modelSelect.innerHTML = "";
+      
       liveModels.forEach(m => {
         const opt = document.createElement("option");
         opt.value = m.name;
@@ -820,7 +1018,6 @@ async function detectAvailableLiveModels(key, silent = false) {
         modelSelect.appendChild(opt);
       });
 
-      // Ensure FALLBACK_MODEL is present in the list
       if (!liveModels.some(m => m.name === FALLBACK_MODEL)) {
         const fallbackOpt = document.createElement("option");
         fallbackOpt.value = FALLBACK_MODEL;
@@ -828,154 +1025,19 @@ async function detectAvailableLiveModels(key, silent = false) {
         modelSelect.appendChild(fallbackOpt);
       }
 
-      const exists = liveModels.some(m => m.name === currentSelected);
-      if (exists) {
-        modelSelect.value = currentSelected;
-      } else {
-        modelSelect.value = liveModels[0].name;
-        localStorage.setItem("va_model", modelSelect.value);
+      // Ensure the active persona's model stays selected if possible
+      if (![...modelSelect.options].some(o => o.value === currentSelected)) {
+        const opt = document.createElement("option");
+        opt.value = currentSelected;
+        opt.textContent = currentSelected.replace("models/", "");
+        modelSelect.appendChild(opt);
       }
-      if (!silent) {
-        toast("success", "Models Detected", `Found ${liveModels.length} conversational Live model(s) for your key.`);
-      }
-    } else if (!silent) {
-      toast("info", "Fallback Kept", "No matching conversational live models found. Kept standard list.");
+      modelSelect.value = currentSelected;
     }
   } catch (err) {
-    if (!silent) {
-      toast("warning", "Model Detection Failed", err.message);
-    }
-  } finally {
-    if (refreshBtn) refreshBtn.textContent = "⟳ Detect";
+    if (!silent) console.error("Model Detection Failed", err.message);
   }
 }
-
-/* ── SETTINGS PERSISTENCE & PERSONA HANDLING ────────── */
-const apiKeyInput = document.getElementById("apiKey");
-apiKeyInput.value = localStorage.getItem("va_api_key") || "";
-
-const personaSelect = document.getElementById("personaSelect");
-const modelSelect = document.getElementById("modelSelect");
-const langSelect = document.getElementById("langSelect");
-const voiceSelect = document.getElementById("voiceSelect");
-const promptInput = document.getElementById("systemPrompt");
-const googleSearchToggle = document.getElementById("googleSearchToggle");
-
-apiKeyInput.addEventListener("change", () => {
-  const key = apiKeyInput.value.trim();
-  localStorage.setItem("va_api_key", key);
-  if (key) detectAvailableLiveModels(key, true);
-});
-
-// Load search toggle state
-const savedSearch = localStorage.getItem("va_search_enabled");
-if (savedSearch !== null) {
-  googleSearchToggle.checked = savedSearch === "true";
-}
-googleSearchToggle.addEventListener("change", () => {
-  localStorage.setItem("va_search_enabled", googleSearchToggle.checked);
-});
-
-function applyPersona(personaKey) {
-  const preset = PRESETS[personaKey];
-  if (!preset) return;
-
-  personaSelect.value = personaKey;
-  langSelect.value = preset.lang;
-  voiceSelect.value = preset.voice || DEFAULT_VOICE;
-
-  if (preset.model) {
-    if (![...modelSelect.options].some(o => o.value === preset.model)) {
-      const opt = document.createElement("option");
-      opt.value = preset.model;
-      opt.textContent = preset.model.replace("models/", "");
-      modelSelect.appendChild(opt);
-    }
-    modelSelect.value = preset.model;
-    localStorage.setItem("va_model", preset.model);
-  }
-
-  promptInput.value = preset.instruction;
-
-  localStorage.setItem("va_persona", personaKey);
-  localStorage.setItem("va_lang", preset.lang);
-  localStorage.setItem("va_voice", preset.voice || DEFAULT_VOICE);
-  localStorage.setItem("va_prompt", preset.instruction);
-}
-
-// Initialize active persona
-let savedPersona = localStorage.getItem("va_persona");
-if (!PRESETS[savedPersona]) {
-  savedPersona = "helga";
-}
-personaSelect.value = savedPersona;
-
-langSelect.value = localStorage.getItem("va_lang") || PRESETS[savedPersona].lang;
-
-// Sanitize saved voice (purge old Flare/Glow or any non-Gemini voice)
-let savedVoice = localStorage.getItem("va_voice");
-if (!VALID_GEMINI_VOICES.includes(savedVoice)) {
-  savedVoice = PRESETS[savedPersona].voice || DEFAULT_VOICE;
-  localStorage.setItem("va_voice", savedVoice);
-}
-voiceSelect.value = savedVoice;
-
-// Ensure saved model exists in dropdown
-const savedModel = localStorage.getItem("va_model") || PRESETS[savedPersona].model || DEFAULT_MODEL;
-if (![...modelSelect.options].some(o => o.value === savedModel)) {
-  const opt = document.createElement("option");
-  opt.value = savedModel;
-  opt.textContent = savedModel.replace("models/", "");
-  modelSelect.appendChild(opt);
-}
-modelSelect.value = savedModel;
-
-promptInput.value = localStorage.getItem("va_prompt") || PRESETS[savedPersona].instruction;
-
-// Auto-query live models on load if key is saved
-if (apiKeyInput.value.trim()) {
-  detectAvailableLiveModels(apiKeyInput.value.trim(), true);
-}
-
-personaSelect.addEventListener("change", (e) => {
-  applyPersona(e.target.value);
-});
-
-modelSelect.addEventListener("change", () => {
-  localStorage.setItem("va_model", modelSelect.value);
-});
-
-langSelect.addEventListener("change", () => {
-  localStorage.setItem("va_lang", langSelect.value);
-});
-
-voiceSelect.addEventListener("change", () => {
-  localStorage.setItem("va_voice", voiceSelect.value);
-});
-
-promptInput.addEventListener("input", () => {
-  localStorage.setItem("va_prompt", promptInput.value);
-});
-
-/* ── VOLUME CONTROL ─────────────────────────────────── */
-const volumeControl = document.getElementById("volumeControl");
-const volumeVal = document.getElementById("volumeVal");
-let playbackGainNode = null;
-let currentVolume = parseFloat(localStorage.getItem("va_volume") ?? "100") / 100;
-if (isNaN(currentVolume)) currentVolume = 1;
-
-volumeControl.value = Math.round(currentVolume * 100);
-volumeVal.textContent = `${volumeControl.value}%`;
-
-volumeControl.addEventListener("input", (e) => {
-  const val = parseInt(e.target.value, 10);
-  volumeVal.textContent = `${val}%`;
-  currentVolume = val / 100;
-  localStorage.setItem("va_volume", val);
-  if (playbackGainNode && playbackCtx) {
-    playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
-  }
-});
 
 /* ── TOASTER ────────────────────────────────────────── */
 const TOAST_ICONS = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
@@ -1008,6 +1070,8 @@ let micStream = null;
 let audioContext = null;
 let processor = null;
 let playbackCtx = null;
+let playbackGainNode = null;
+let currentVolume = 1;
 let nextPlayTime = 0;
 let activeSources = [];
 
@@ -1040,7 +1104,6 @@ function appendMessage(sender, text = "") {
   return msg.querySelector(".content");
 }
 
-/* ── QUOTA DETECTION HELPER ─────────────────────────── */
 function checkIsQuotaError(reason = "", code = 0, status = "") {
   const text = (String(reason) + " " + String(code) + " " + String(status)).toLowerCase();
   return (
@@ -1054,12 +1117,10 @@ function checkIsQuotaError(reason = "", code = 0, status = "") {
   );
 }
 
-/* ── AUTOMATIC FALLBACK TRIGGER ─────────────────────── */
 async function triggerFallback() {
   isFallingBack = true;
   toast('warning', 'Quota Reached', 'Switching automatically to fallback: Gemini 2.5 Flash Native Audio...', 5000);
 
-  // Ensure FALLBACK_MODEL exists in options & update selection
   if (![...modelSelect.options].some(o => o.value === FALLBACK_MODEL)) {
     const opt = document.createElement("option");
     opt.value = FALLBACK_MODEL;
@@ -1067,9 +1128,7 @@ async function triggerFallback() {
     modelSelect.appendChild(opt);
   }
   modelSelect.value = FALLBACK_MODEL;
-  localStorage.setItem("va_model", FALLBACK_MODEL);
-
-  // Teardown previous socket cleanly
+  
   if (ws) {
     ws.onclose = null;
     ws.onerror = null;
@@ -1080,7 +1139,6 @@ async function triggerFallback() {
   isSetupComplete = false;
   setStatus("Switching to Gemini 2.5...", "");
 
-  // Re-establish session with fallback model
   setTimeout(async () => {
     try {
       await connectWebSocket(FALLBACK_MODEL);
@@ -1091,13 +1149,9 @@ async function triggerFallback() {
   }, 250);
 }
 
-/* ── SESSION TOGGLE ─────────────────────────────────── */
 async function toggleSession() {
-  if (isConnected) {
-    stopSession();
-  } else {
-    await startSession();
-  }
+  if (isConnected) stopSession();
+  else await startSession();
 }
 
 async function startSession() {
@@ -1108,9 +1162,7 @@ async function startSession() {
   if (!key) {
     toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the settings panel.');
     const trigger = document.getElementById("settingsToggle");
-    if (trigger.getAttribute("aria-expanded") !== "true") {
-      toggleAccordion(trigger);
-    }
+    if (trigger.getAttribute("aria-expanded") !== "true") toggleAccordion(trigger);
     apiKeyInput.focus();
     return;
   }
@@ -1134,16 +1186,13 @@ async function startSession() {
   await connectWebSocket(model);
 }
 
-/* ── WEBSOCKET CONNECTION & EVENT HANDLERS ──────────── */
 async function connectWebSocket(activeModel) {
   const key = apiKeyInput.value.trim();
   const lang = langSelect.value;
   const currentP = personaSelect.value;
   let voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
   
-  if (!VALID_GEMINI_VOICES.includes(voice)) {
-    voice = DEFAULT_VOICE;
-  }
+  if (!VALID_GEMINI_VOICES.includes(voice)) voice = DEFAULT_VOICE;
 
   const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
   const enableSearch = googleSearchToggle.checked;
@@ -1156,9 +1205,7 @@ async function connectWebSocket(activeModel) {
 
   ws.onopen = () => {
     const tools = [];
-    if (enableSearch) {
-      tools.push({ googleSearch: {} });
-    }
+    if (enableSearch) tools.push({ googleSearch: {} });
 
     const setupMessage = {
       setup: {
@@ -1172,13 +1219,9 @@ async function connectWebSocket(activeModel) {
           }
         },
         ...(tools.length > 0 ? { tools } : {}),
-        inputAudioTranscription: {
-          languageCodes: [lang]
-        },
+        inputAudioTranscription: { languageCodes: [lang] },
         outputAudioTranscription: {},
-        systemInstruction: {
-          parts: [{ text: instruction }]
-        }
+        systemInstruction: { parts: [{ text: instruction }] }
       }
     };
 
@@ -1202,7 +1245,6 @@ async function connectWebSocket(activeModel) {
       return;
     }
 
-    // Check for inline error payload (e.g. quota limit error frame)
     if (msg.error) {
       const errMsg = msg.error.message || JSON.stringify(msg.error);
       const isQuota = checkIsQuotaError(errMsg, msg.error.code, msg.error.status);
@@ -1230,18 +1272,14 @@ async function connectWebSocket(activeModel) {
     const serverContent = msg.serverContent;
     if (!serverContent) return;
 
-    // 1. Spoken user transcription
     const userText = serverContent.inputTranscription?.text;
     if (userText && userText.trim()) {
-      if (!currentUserMsgEl) {
-        currentUserMsgEl = appendMessage("user");
-      }
+      if (!currentUserMsgEl) currentUserMsgEl = appendMessage("user");
       currentUserMsgEl.textContent += userText;
       const chat = document.getElementById("chat");
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 2. Audio playback stream
     if (serverContent.modelTurn?.parts) {
       isAssistantSpeaking = true;
       currentUserMsgEl = null;
@@ -1254,36 +1292,28 @@ async function connectWebSocket(activeModel) {
       }
     }
 
-    // 3. Spoken assistant transcription
     const assistantText = serverContent.outputTranscription?.text;
     if (assistantText) {
       currentUserMsgEl = null;
-      if (!currentAssistantMsgEl) {
-        currentAssistantMsgEl = appendMessage("assistant");
-      }
+      if (!currentAssistantMsgEl) currentAssistantMsgEl = appendMessage("assistant");
       currentAssistantMsgEl.textContent += assistantText;
       const chat = document.getElementById("chat");
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Barge-in interruption
     if (serverContent.interrupted) {
       stopAudioPlayback();
       currentAssistantMsgEl = null;
     }
 
-    // Turn complete
     if (serverContent.turnComplete) {
       currentAssistantMsgEl = null;
     }
   };
 
-  ws.onerror = (e) => {
-    console.error("WebSocket Error:", e);
-  };
+  ws.onerror = (e) => console.error("WebSocket Error:", e);
 
   ws.onclose = (event) => {
-    console.warn("WebSocket closed:", event.code, event.reason);
     if (event.code !== 1000) {
       const isQuota = checkIsQuotaError(event.reason, event.code);
       if (isQuota && activeModel !== FALLBACK_MODEL && !isFallingBack) {
@@ -1297,7 +1327,6 @@ async function connectWebSocket(activeModel) {
   };
 }
 
-/* ── MICROPHONE AUDIO STREAM ────────────────────────── */
 async function initMicrophone() {
   if (micStream && audioContext && processor) return;
 
@@ -1306,9 +1335,7 @@ async function initMicrophone() {
   });
 
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioContext.state === "suspended") {
-    await audioContext.resume();
-  }
+  if (audioContext.state === "suspended") await audioContext.resume();
 
   const source = audioContext.createMediaStreamSource(micStream);
   processor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -1320,9 +1347,7 @@ async function initMicrophone() {
     const inputData = e.inputBuffer.getChannelData(0);
 
     let sum = 0;
-    for (let i = 0; i < inputData.length; i++) {
-      sum += inputData[i] * inputData[i];
-    }
+    for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
     const rms = Math.sqrt(sum / inputData.length);
     const level = Math.min(5, Math.ceil(rms * 120));
 
@@ -1341,25 +1366,18 @@ async function initMicrophone() {
 
     try {
       ws.send(JSON.stringify({
-        realtimeInput: {
-          audio: {
-            mimeType: "audio/pcm;rate=16000",
-            data: base64Audio
-          }
-        }
+        realtimeInput: { audio: { mimeType: "audio/pcm;rate=16000", data: base64Audio } }
       }));
     } catch (err) {}
   };
 
   source.connect(processor);
-
   const mute = audioContext.createGain();
   mute.gain.value = 0;
   processor.connect(mute);
   mute.connect(audioContext.destination);
 }
 
-/* ── AUDIO PLAYBACK (24kHz PCM WITH VOLUME GAIN) ────── */
 function playAudioChunk(base64PCM) {
   if (!playbackCtx) {
     playbackCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
@@ -1367,9 +1385,7 @@ function playAudioChunk(base64PCM) {
     playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
     playbackGainNode.connect(playbackCtx.destination);
   }
-  if (playbackCtx.state === "suspended") {
-    playbackCtx.resume();
-  }
+  if (playbackCtx.state === "suspended") playbackCtx.resume();
 
   const binary = atob(base64PCM);
   const bytes = new Uint8Array(binary.length);
@@ -1377,9 +1393,7 @@ function playAudioChunk(base64PCM) {
 
   const int16 = new Int16Array(bytes.buffer);
   const float32 = new Float32Array(int16.length);
-  for (let i = 0; i < int16.length; i++) {
-    float32[i] = int16[i] / 32768.0;
-  }
+  for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768.0;
 
   const audioBuffer = playbackCtx.createBuffer(1, float32.length, 24000);
   audioBuffer.copyToChannel(float32, 0);
@@ -1454,7 +1468,6 @@ function stopSession() {
   setStatus("Disconnected", "");
 }
 
-/* ── AUDIO CONVERSIONS ──────────────────────────────── */
 function downsample(buffer, fromRate, toRate) {
   if (fromRate === toRate) return buffer;
   const ratio = fromRate / toRate;
@@ -1479,9 +1492,7 @@ function floatTo16BitPCM(input) {
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 </script>
