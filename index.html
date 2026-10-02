@@ -82,8 +82,27 @@ body {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
+
+.icon-btn {
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(149,223,219,.85);
+  background: rgba(149,223,219,.12);
+  border: 1px solid rgba(149,223,219,.22);
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: 130ms;
+}
+.icon-btn:hover { background: rgba(149,223,219,.22); border-color: rgba(149,223,219,.40); color: var(--teal-100); }
+.icon-btn svg { width: 14px; height: 14px; fill: currentColor; }
 
 .theme-btn {
   font-family: var(--font);
@@ -93,11 +112,76 @@ body {
   background: rgba(149,223,219,.12);
   border: 1px solid rgba(149,223,219,.22);
   border-radius: 4px;
-  padding: 4px 11px;
+  padding: 5px 11px;
   cursor: pointer;
   transition: 130ms;
 }
 .theme-btn:hover { background: rgba(149,223,219,.22); border-color: rgba(149,223,219,.40); color: var(--teal-100); }
+
+/* ── MODAL POPUP FOR KEYS ───────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(1, 45, 44, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: translateY(8px);
+  transition: transform 200ms ease;
+}
+.modal-overlay.open .modal-card {
+  transform: translateY(0);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--teal-900);
+}
+[data-theme="dark"] .modal-header { color: var(--teal-100); }
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
 
 /* ── WRAPPER ────────────────────────────────────────── */
 .wrap {
@@ -149,18 +233,10 @@ body {
   flex-shrink: 0;
 }
 
-.card-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--teal-900);
-  white-space: nowrap;
-}
-[data-theme="dark"] .card-title { color: var(--teal-100); }
-
 .persona-select {
   height: 36px;
   width: auto;
-  min-width: 110px;
+  min-width: 130px;
   font-weight: 600;
   padding: 6px 10px;
   flex-shrink: 0;
@@ -573,6 +649,29 @@ select.input { cursor: pointer; }
 
 <div id="toast-container"></div>
 
+<!-- KEYS MODAL POPUP -->
+<div class="modal-overlay" id="keysModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>Access Keys</span>
+      <button class="modal-close" onclick="toggleKeysModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="field-label">Gemini API Key</label>
+        <input type="password" id="apiKey" class="input" placeholder="Enter Gemini key...">
+      </div>
+      <div>
+        <label class="field-label">GitHub PAT</label>
+        <input type="password" id="ghToken" class="input" placeholder="ghp_...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="toggleKeysModal(false)">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- NAVBAR -->
 <nav class="navbar">
   <a class="brand-icon" href="#" aria-label="Virtual Assistant">
@@ -591,6 +690,10 @@ select.input { cursor: pointer; }
   <div class="nav-pipe"></div>
   <a class="nav-brand-text" href="#">Virtual Assistant</a>
   <div class="nav-links-right">
+    <button class="icon-btn" onclick="toggleKeysModal(true)" title="Access Keys">
+      <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+      <span>Keys</span>
+    </button>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">Dark</button>
   </div>
 </nav>
@@ -601,8 +704,7 @@ select.input { cursor: pointer; }
   <div class="card">
     <div class="card-header-row">
       <div class="header-left">
-        <div class="card-title">Virtual Assistant</div>
-        <select id="personaSelect" class="input persona-select" aria-label="Select Assistant">
+        <select id="personaSelect" class="input persona-select" aria-label="Select Persona">
           <!-- Populated dynamically -->
         </select>
       </div>
@@ -622,7 +724,7 @@ select.input { cursor: pointer; }
         </div>
 
         <button id="toggleBtn" class="btn btn-primary" onclick="toggleSession()">
-          Start Conversation
+          Start
         </button>
       </div>
     </div>
@@ -631,33 +733,17 @@ select.input { cursor: pointer; }
   <!-- COLLAPSIBLE SETTINGS ACCORDION -->
   <div class="accordion">
     <button class="accordion-trigger" id="settingsToggle" aria-expanded="false" onclick="toggleAccordion(this)">
-      <span>Settings</span>
+      <span>Persona</span>
       <svg class="accordion-chevron" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 7 9 12 14 7"/></svg>
     </button>
     <div class="accordion-body">
       <div class="accordion-body-inner">
 
-        <!-- Access Keys Section -->
-        <div class="settings-section">
-          <div class="settings-section-header">Access Keys</div>
-          <div class="settings-grid-2col">
-            <div>
-              <label class="field-label">Gemini API Key</label>
-              <input type="password" id="apiKey" class="input" placeholder="Enter Gemini key...">
-            </div>
-            <div>
-              <label class="field-label">GitHub PAT</label>
-              <input type="password" id="ghToken" class="input" placeholder="ghp_...">
-            </div>
-          </div>
-        </div>
-
         <!-- Persona Configuration Section -->
         <div class="settings-section">
-          <div class="settings-section-header">Persona Configuration</div>
           <div class="settings-grid-2col">
             <div>
-              <label class="field-label">Live Conversational Model</label>
+              <label class="field-label">Model</label>
               <select id="modelSelect" class="input">
                 <option value="models/gemini-3.8-live">Gemini 3.8 Live (Default)</option>
                 <option value="models/gemini-2.5-flash-native-audio-latest">Gemini 2.5 Flash Native Audio (Fallback)</option>
@@ -666,7 +752,7 @@ select.input { cursor: pointer; }
               </select>
             </div>
             <div>
-              <label class="field-label">Input Language</label>
+              <label class="field-label">Language</label>
               <select id="langSelect" class="input">
                 <option value="de-DE">German (de-DE)</option>
                 <option value="fr-FR">French (fr-FR)</option>
@@ -676,7 +762,7 @@ select.input { cursor: pointer; }
               </select>
             </div>
             <div>
-              <label class="field-label">Gemini Live Voice</label>
+              <label class="field-label">Voice</label>
               <select id="voiceSelect" class="input">
                 <option value="Aoede">Aoede (Female - Breezy)</option>
                 <option value="Kore">Kore (Female - Firm)</option>
@@ -700,17 +786,18 @@ select.input { cursor: pointer; }
             <div style="grid-column: 1 / -1;">
               <label class="tool-toggle-label">
                 <input type="checkbox" id="googleSearchToggle" checked>
-                <span>Enable Google Search</span>
+                <span>Google Search</span>
               </label>
             </div>
           </div>
           <div>
-            <label class="field-label">Metaprompt (System Instruction)</label>
+            <label class="field-label">Prompt</label>
             <textarea id="systemPrompt" class="textarea"></textarea>
           </div>
           <div class="persona-actions">
             <button class="btn btn-secondary btn-sm" onclick="saveCurrentPersona()">Save</button>
             <button class="btn btn-primary btn-sm" onclick="saveAsNewPersona()">Save as New</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCurrentPersona()" style="margin-left: auto;">Delete</button>
           </div>
         </div>
 
@@ -805,6 +892,11 @@ function toggleAccordion(btn) {
   btn.nextElementSibling.classList.toggle('open', !expanded);
 }
 
+function toggleKeysModal(show) {
+  const modal = document.getElementById('keysModal');
+  modal.classList.toggle('open', show);
+}
+
 /* ── BASE64 UTF-8 HELPERS ───────────────────────────── */
 function encodeUTF8toBase64(str) {
   const bytes = new TextEncoder().encode(str);
@@ -853,7 +945,7 @@ async function savePersonasToGitHub() {
   const token = ghTokenInput.value.trim();
   
   if (!token) {
-    toast('error', 'GitHub Token Missing', 'Please enter your GitHub PAT to save changes.');
+    toast('error', 'GitHub Token Missing', 'Please enter your GitHub PAT in the keys menu to save changes.');
     return;
   }
 
@@ -990,6 +1082,23 @@ function saveAsNewPersona() {
   personaSelect.value = newKey;
   applyPersona(newKey);
   savePersonasToGitHub();
+}
+
+function deleteCurrentPersona() {
+  const keys = Object.keys(PRESETS);
+  if (keys.length <= 1) {
+    toast('warning', 'Cannot Delete', 'You must keep at least one persona.');
+    return;
+  }
+  const currentKey = personaSelect.value;
+  const currentName = PRESETS[currentKey]?.name || currentKey;
+
+  if (!confirm(`Are you sure you want to delete persona "${currentName}"?`)) return;
+
+  delete PRESETS[currentKey];
+  populatePersonaDropdown();
+  savePersonasToGitHub();
+  toast('info', 'Deleted', `Persona "${currentName}" has been removed.`);
 }
 
 /* ── SETTINGS PERSISTENCE & INITIALIZATION ──────────── */
@@ -1247,9 +1356,8 @@ async function startSession() {
   const model = modelSelect ? modelSelect.value : (PRESETS[currentP]?.model || DEFAULT_MODEL);
 
   if (!key) {
-    toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the settings panel.');
-    const trigger = document.getElementById("settingsToggle");
-    if (trigger.getAttribute("aria-expanded") !== "true") toggleAccordion(trigger);
+    toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the keys menu.');
+    toggleKeysModal(true);
     apiKeyInput.focus();
     return;
   }
@@ -1323,9 +1431,9 @@ async function connectWebSocket(activeModel) {
     ws.send(JSON.stringify(setupMessage));
     isConnected = true;
     toggleBtn.disabled = false;
-    toggleBtn.innerText = "End Conversation";
+    toggleBtn.innerText = "Stop";
     toggleBtn.className = "btn btn-danger";
-    setStatus("Waiting for server...", "");
+    setStatus("Ready! Speak or type", "connected");
   };
 
   ws.onmessage = async (event) => {
@@ -1559,7 +1667,7 @@ function stopSession() {
 
   const toggleBtn = document.getElementById("toggleBtn");
   toggleBtn.disabled = false;
-  toggleBtn.innerText = "Start Conversation";
+  toggleBtn.innerText = "Start";
   toggleBtn.className = "btn btn-primary";
   personaSelect.disabled = false;
   modelSelect.disabled = false;
