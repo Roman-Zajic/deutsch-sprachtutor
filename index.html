@@ -313,6 +313,21 @@ body {
   display: block;
 }
 
+.refresh-models-btn {
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--teal-700);
+  cursor: pointer;
+  padding: 0 4px;
+  text-decoration: underline;
+  transition: opacity 120ms;
+}
+.refresh-models-btn:hover { opacity: 0.8; }
+[data-theme="dark"] .refresh-models-btn { color: var(--teal-400); }
+
 .input {
   font-family: var(--font);
   font-size: 0.875rem;
@@ -424,7 +439,6 @@ select.input { cursor: pointer; }
   box-shadow: 0 1px 3px rgba(1,45,44,.06);
 }
 
-/* User Message */
 .msg-user {
   align-self: flex-end;
   background: var(--teal-900);
@@ -439,7 +453,6 @@ select.input { cursor: pointer; }
 }
 .msg-user .msg-speaker { color: var(--teal-100); }
 
-/* Assistant Message */
 .msg-assistant {
   align-self: flex-start;
   background: #FFFCF2;
@@ -618,12 +631,15 @@ select.input { cursor: pointer; }
               <input type="password" id="apiKey" class="input" placeholder="Enter API key...">
             </div>
             <div>
-              <label class="field-label">Gemini Live Model</label>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label class="field-label" style="margin-bottom:0;">Live Conversational Model</label>
+                <button type="button" id="refreshModelsBtn" class="refresh-models-btn" onclick="detectAvailableLiveModels(apiKeyInput.value.trim())" title="Detect live conversational models supported by your API key">⟳ Detect</button>
+              </div>
               <select id="modelSelect" class="input">
                 <option value="models/gemini-3.8-live">Gemini 3.8 Live (Default)</option>
-                <option value="models/gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Live</option>
+                <option value="models/gemini-2.5-flash-native-audio-latest">Gemini 2.5 Flash Native Audio (Fallback)</option>
                 <option value="models/gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
-                <option value="models/gemini-2.0-flash-live-001">Gemini 2.0 Flash Live</option>
+                <option value="models/gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live Preview</option>
               </select>
             </div>
             <div>
@@ -650,15 +666,18 @@ select.input { cursor: pointer; }
               </select>
             </div>
             <div>
-              <label class="field-label">Assistant Voice</label>
+              <label class="field-label">Gemini Live Voice</label>
               <select id="voiceSelect" class="input">
-                <option value="Flare">Flare (Female)</option>
-                <option value="Glow">Glow (Male)</option>
-                <option value="Charon">Charon (Male)</option>
-                <option value="Puck">Puck (Male)</option>
-                <option value="Fenrir">Fenrir (Male)</option>
-                <option value="Aoede">Aoede (Female)</option>
-                <option value="Kore">Kore (Female)</option>
+                <option value="Aoede">Aoede (Female - Breezy)</option>
+                <option value="Kore">Kore (Female - Firm)</option>
+                <option value="Autonoe">Autonoe (Female - Bright)</option>
+                <option value="Achernar">Achernar (Female - Soft)</option>
+                <option value="Zephyr">Zephyr (Female - Bright)</option>
+                <option value="Charon">Charon (Male - Smooth)</option>
+                <option value="Puck">Puck (Male - Upbeat)</option>
+                <option value="Fenrir">Fenrir (Male - Excitable)</option>
+                <option value="Orus">Orus (Male - Firm)</option>
+                <option value="Algieba">Algieba (Male - Smooth)</option>
               </select>
             </div>
           </div>
@@ -699,13 +718,20 @@ select.input { cursor: pointer; }
 <script>
 /* ── CONSTANTS & PRESETS ────────────────────────────── */
 const DEFAULT_MODEL = "models/gemini-3.8-live";
-const DEFAULT_VOICE = "Flare";
+const FALLBACK_MODEL = "models/gemini-2.5-flash-native-audio-latest";
+const DEFAULT_VOICE = "Aoede";
+
+// Valid Gemini Live voices
+const VALID_GEMINI_VOICES = [
+  "Aoede", "Kore", "Autonoe", "Achernar", "Zephyr",
+  "Charon", "Puck", "Fenrir", "Orus", "Algieba"
+];
 
 const PRESETS = {
   helga: {
     name: "Helga",
     lang: "de-DE",
-    voice: "Flare", // Female
+    voice: "Aoede", // Female
     model: "models/gemini-3.8-live",
     instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
 
@@ -722,7 +748,7 @@ Rules for your responses:
   "jean-paul": {
     name: "Jean-Paul",
     lang: "fr-FR",
-    voice: "Glow", // Male
+    voice: "Charon", // Male
     model: "models/gemini-3.8-live",
     instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
 
@@ -760,12 +786,73 @@ function toggleAccordion(btn) {
   btn.nextElementSibling.classList.toggle('open', !expanded);
 }
 
+/* ── DYNAMIC MODEL DETECTION (EXCLUDING TRANSLATION/TRANSCRIBE) ── */
+async function detectAvailableLiveModels(key, silent = false) {
+  if (!key) {
+    if (!silent) toast('warning', 'Key Required', 'Please enter your Gemini API key first.');
+    return;
+  }
+  const refreshBtn = document.getElementById("refreshModelsBtn");
+  if (refreshBtn) refreshBtn.textContent = "Detecting...";
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=100`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    // Filter conversational live models only
+    const liveModels = (data.models || []).filter(m => {
+      const isBidi = Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes("bidiGenerateContent");
+      const name = (m.name || "").toLowerCase();
+      const displayName = (m.displayName || "").toLowerCase();
+      const isTranslate = name.includes("translate") || displayName.includes("translate");
+      const isTranscribe = name.includes("transcribe") || displayName.includes("transcribe");
+      return isBidi && !isTranslate && !isTranscribe;
+    });
+
+    if (liveModels.length > 0) {
+      const currentSelected = modelSelect.value;
+      modelSelect.innerHTML = "";
+      liveModels.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.name;
+        opt.textContent = `${m.displayName || m.name.replace("models/", "")}`;
+        modelSelect.appendChild(opt);
+      });
+
+      // Ensure FALLBACK_MODEL is present in the list
+      if (!liveModels.some(m => m.name === FALLBACK_MODEL)) {
+        const fallbackOpt = document.createElement("option");
+        fallbackOpt.value = FALLBACK_MODEL;
+        fallbackOpt.textContent = "Gemini 2.5 Flash Native Audio (Fallback)";
+        modelSelect.appendChild(fallbackOpt);
+      }
+
+      const exists = liveModels.some(m => m.name === currentSelected);
+      if (exists) {
+        modelSelect.value = currentSelected;
+      } else {
+        modelSelect.value = liveModels[0].name;
+        localStorage.setItem("va_model", modelSelect.value);
+      }
+      if (!silent) {
+        toast("success", "Models Detected", `Found ${liveModels.length} conversational Live model(s) for your key.`);
+      }
+    } else if (!silent) {
+      toast("info", "Fallback Kept", "No matching conversational live models found. Kept standard list.");
+    }
+  } catch (err) {
+    if (!silent) {
+      toast("warning", "Model Detection Failed", err.message);
+    }
+  } finally {
+    if (refreshBtn) refreshBtn.textContent = "⟳ Detect";
+  }
+}
+
 /* ── SETTINGS PERSISTENCE & PERSONA HANDLING ────────── */
 const apiKeyInput = document.getElementById("apiKey");
 apiKeyInput.value = localStorage.getItem("va_api_key") || "";
-apiKeyInput.addEventListener("change", () => {
-  localStorage.setItem("va_api_key", apiKeyInput.value.trim());
-});
 
 const personaSelect = document.getElementById("personaSelect");
 const modelSelect = document.getElementById("modelSelect");
@@ -774,7 +861,13 @@ const voiceSelect = document.getElementById("voiceSelect");
 const promptInput = document.getElementById("systemPrompt");
 const googleSearchToggle = document.getElementById("googleSearchToggle");
 
-// Load search toggle state (defaults to true)
+apiKeyInput.addEventListener("change", () => {
+  const key = apiKeyInput.value.trim();
+  localStorage.setItem("va_api_key", key);
+  if (key) detectAvailableLiveModels(key, true);
+});
+
+// Load search toggle state
 const savedSearch = localStorage.getItem("va_search_enabled");
 if (savedSearch !== null) {
   googleSearchToggle.checked = savedSearch === "true";
@@ -790,13 +883,23 @@ function applyPersona(personaKey) {
   personaSelect.value = personaKey;
   langSelect.value = preset.lang;
   voiceSelect.value = preset.voice || DEFAULT_VOICE;
-  modelSelect.value = preset.model || DEFAULT_MODEL;
+
+  if (preset.model) {
+    if (![...modelSelect.options].some(o => o.value === preset.model)) {
+      const opt = document.createElement("option");
+      opt.value = preset.model;
+      opt.textContent = preset.model.replace("models/", "");
+      modelSelect.appendChild(opt);
+    }
+    modelSelect.value = preset.model;
+    localStorage.setItem("va_model", preset.model);
+  }
+
   promptInput.value = preset.instruction;
 
   localStorage.setItem("va_persona", personaKey);
   localStorage.setItem("va_lang", preset.lang);
   localStorage.setItem("va_voice", preset.voice || DEFAULT_VOICE);
-  localStorage.setItem("va_model", preset.model || DEFAULT_MODEL);
   localStorage.setItem("va_prompt", preset.instruction);
 }
 
@@ -808,9 +911,31 @@ if (!PRESETS[savedPersona]) {
 personaSelect.value = savedPersona;
 
 langSelect.value = localStorage.getItem("va_lang") || PRESETS[savedPersona].lang;
-voiceSelect.value = localStorage.getItem("va_voice") || PRESETS[savedPersona].voice || DEFAULT_VOICE;
-modelSelect.value = localStorage.getItem("va_model") || PRESETS[savedPersona].model || DEFAULT_MODEL;
+
+// Sanitize saved voice (purge old Flare/Glow or any non-Gemini voice)
+let savedVoice = localStorage.getItem("va_voice");
+if (!VALID_GEMINI_VOICES.includes(savedVoice)) {
+  savedVoice = PRESETS[savedPersona].voice || DEFAULT_VOICE;
+  localStorage.setItem("va_voice", savedVoice);
+}
+voiceSelect.value = savedVoice;
+
+// Ensure saved model exists in dropdown
+const savedModel = localStorage.getItem("va_model") || PRESETS[savedPersona].model || DEFAULT_MODEL;
+if (![...modelSelect.options].some(o => o.value === savedModel)) {
+  const opt = document.createElement("option");
+  opt.value = savedModel;
+  opt.textContent = savedModel.replace("models/", "");
+  modelSelect.appendChild(opt);
+}
+modelSelect.value = savedModel;
+
 promptInput.value = localStorage.getItem("va_prompt") || PRESETS[savedPersona].instruction;
+
+// Auto-query live models on load if key is saved
+if (apiKeyInput.value.trim()) {
+  detectAvailableLiveModels(apiKeyInput.value.trim(), true);
+}
 
 personaSelect.addEventListener("change", (e) => {
   applyPersona(e.target.value);
@@ -889,8 +1014,8 @@ let activeSources = [];
 let isConnected = false;
 let isSetupComplete = false;
 let isAssistantSpeaking = false;
+let isFallingBack = false;
 
-// Pointers to the active streaming speech bubbles
 let currentUserMsgEl = null;
 let currentAssistantMsgEl = null;
 
@@ -915,6 +1040,57 @@ function appendMessage(sender, text = "") {
   return msg.querySelector(".content");
 }
 
+/* ── QUOTA DETECTION HELPER ─────────────────────────── */
+function checkIsQuotaError(reason = "", code = 0, status = "") {
+  const text = (String(reason) + " " + String(code) + " " + String(status)).toLowerCase();
+  return (
+    text.includes("quota") ||
+    text.includes("resource_exhausted") ||
+    text.includes("resourceexhausted") ||
+    text.includes("rate limit") ||
+    text.includes("ratelimit") ||
+    text.includes("exceeded") ||
+    text.includes("429")
+  );
+}
+
+/* ── AUTOMATIC FALLBACK TRIGGER ─────────────────────── */
+async function triggerFallback() {
+  isFallingBack = true;
+  toast('warning', 'Quota Reached', 'Switching automatically to fallback: Gemini 2.5 Flash Native Audio...', 5000);
+
+  // Ensure FALLBACK_MODEL exists in options & update selection
+  if (![...modelSelect.options].some(o => o.value === FALLBACK_MODEL)) {
+    const opt = document.createElement("option");
+    opt.value = FALLBACK_MODEL;
+    opt.textContent = "Gemini 2.5 Flash Native Audio (Fallback)";
+    modelSelect.appendChild(opt);
+  }
+  modelSelect.value = FALLBACK_MODEL;
+  localStorage.setItem("va_model", FALLBACK_MODEL);
+
+  // Teardown previous socket cleanly
+  if (ws) {
+    ws.onclose = null;
+    ws.onerror = null;
+    ws.close();
+    ws = null;
+  }
+  stopAudioPlayback();
+  isSetupComplete = false;
+  setStatus("Switching to Gemini 2.5...", "");
+
+  // Re-establish session with fallback model
+  setTimeout(async () => {
+    try {
+      await connectWebSocket(FALLBACK_MODEL);
+    } catch (e) {
+      toast('error', 'Fallback Failed', e.message);
+      stopSession();
+    }
+  }, 250);
+}
+
 /* ── SESSION TOGGLE ─────────────────────────────────── */
 async function toggleSession() {
   if (isConnected) {
@@ -926,12 +1102,8 @@ async function toggleSession() {
 
 async function startSession() {
   const key = apiKeyInput.value.trim();
-  const lang = langSelect.value;
   const currentP = personaSelect.value;
-  const voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
   const model = modelSelect ? modelSelect.value : (PRESETS[currentP]?.model || DEFAULT_MODEL);
-  const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
-  const enableSearch = googleSearchToggle.checked;
 
   if (!key) {
     toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the settings panel.');
@@ -943,6 +1115,7 @@ async function startSession() {
     return;
   }
 
+  isFallingBack = false;
   setStatus("Starting microphone...", "");
   const toggleBtn = document.getElementById("toggleBtn");
   toggleBtn.innerText = "Connecting...";
@@ -958,6 +1131,24 @@ async function startSession() {
     return;
   }
 
+  await connectWebSocket(model);
+}
+
+/* ── WEBSOCKET CONNECTION & EVENT HANDLERS ──────────── */
+async function connectWebSocket(activeModel) {
+  const key = apiKeyInput.value.trim();
+  const lang = langSelect.value;
+  const currentP = personaSelect.value;
+  let voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
+  
+  if (!VALID_GEMINI_VOICES.includes(voice)) {
+    voice = DEFAULT_VOICE;
+  }
+
+  const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
+  const enableSearch = googleSearchToggle.checked;
+  const toggleBtn = document.getElementById("toggleBtn");
+
   setStatus("Connecting...", "");
 
   const endpoint = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${key}`;
@@ -971,7 +1162,7 @@ async function startSession() {
 
     const setupMessage = {
       setup: {
-        model: model,
+        model: activeModel,
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
@@ -1011,10 +1202,28 @@ async function startSession() {
       return;
     }
 
+    // Check for inline error payload (e.g. quota limit error frame)
+    if (msg.error) {
+      const errMsg = msg.error.message || JSON.stringify(msg.error);
+      const isQuota = checkIsQuotaError(errMsg, msg.error.code, msg.error.status);
+      if (isQuota && activeModel !== FALLBACK_MODEL && !isFallingBack) {
+        triggerFallback();
+        return;
+      }
+      toast('error', 'API Error', errMsg);
+      stopSession();
+      return;
+    }
+
     if (msg.setupComplete) {
       isSetupComplete = true;
       setStatus("Ready! Speak now", "connected");
-      toast('success', 'Connected', 'Conversation session is active.');
+      if (isFallingBack) {
+        toast('success', 'Fallback Active', 'Connected to Gemini 2.5 Flash Native Audio.');
+        isFallingBack = false;
+      } else {
+        toast('success', 'Connected', 'Conversation session is active.');
+      }
       return;
     }
 
@@ -1076,7 +1285,13 @@ async function startSession() {
   ws.onclose = (event) => {
     console.warn("WebSocket closed:", event.code, event.reason);
     if (event.code !== 1000) {
-      toast('error', `Disconnected (${event.code})`, event.reason || 'Check your API key and connection.');
+      const isQuota = checkIsQuotaError(event.reason, event.code);
+      if (isQuota && activeModel !== FALLBACK_MODEL && !isFallingBack) {
+        triggerFallback();
+        return;
+      }
+      let extra = event.reason || 'Check your API key and connection.';
+      toast('error', `Disconnected (${event.code})`, extra, 6000);
     }
     stopSession();
   };
@@ -1084,6 +1299,8 @@ async function startSession() {
 
 /* ── MICROPHONE AUDIO STREAM ────────────────────────── */
 async function initMicrophone() {
+  if (micStream && audioContext && processor) return;
+
   micStream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
   });
@@ -1198,6 +1415,7 @@ function stopSession() {
   isConnected = false;
   isSetupComplete = false;
   isAssistantSpeaking = false;
+  isFallingBack = false;
   currentUserMsgEl = null;
   currentAssistantMsgEl = null;
 
