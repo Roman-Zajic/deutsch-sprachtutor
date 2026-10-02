@@ -743,12 +743,7 @@ select.input { cursor: pointer; }
           <div class="settings-grid-2col">
             <div>
               <label class="field-label">Model</label>
-              <select id="modelSelect" class="input">
-                <option value="models/gemini-3.8-live">Gemini 3.8 Live (Default)</option>
-                <option value="models/gemini-2.5-flash-native-audio-latest">Gemini 2.5 Flash Native Audio (Fallback)</option>
-                <option value="models/gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
-                <option value="models/gemini-3.1-flash-live-preview">Gemini 3.1 Flash Live Preview</option>
-              </select>
+              <select id="modelSelect" class="input"></select>
             </div>
             <div>
               <label class="field-label">Language</label>
@@ -819,31 +814,30 @@ select.input { cursor: pointer; }
 /* ── CONSTANTS & DEFAULTS ────────────────────────────── */
 const DEFAULT_MODEL = "models/gemini-3.8-live";
 const FALLBACK_MODEL = "models/gemini-2.5-flash-native-audio-latest";
+const MODELS = [
+  { id: DEFAULT_MODEL, label: "Gemini 3.8 Live (Default)" },
+  { id: "models/gemini-3.1-flash-live-preview", label: "Gemini 3.1 Flash Live Preview" },
+  { id: FALLBACK_MODEL, label: "Gemini 2.5 Flash Native Audio (Fallback)" }
+];
 const DEFAULT_VOICE = "Aoede";
 const GITHUB_REPO = "Roman-Zajic/deutsch-sprachtutor";
 const GITHUB_FILE_PATH = "settings/personas.json";
-
-const VALID_GEMINI_VOICES = [
-  "Aoede", "Kore", "Autonoe", "Achernar", "Zephyr",
-  "Charon", "Puck", "Fenrir", "Orus", "Algieba"
-];
+const READY_TEXT = "Ready! Speak or type";
 
 let PRESETS = {
   helga: {
     name: "Helga",
     lang: "de-DE",
     voice: "Aoede",
-    model: "models/gemini-3.8-live",
     googleSearch: true,
-    instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.\n\nThe user is practicing German at the intermediate (B1/B2) level.\nAlways transcribe and interpret the user's speech as German, even if their pronunciation is imperfect or contains an accent. Do not transcribe or interpret user speech as other languages.\n\nRules for your responses:\n- Speak exclusively in natural, conversational German suitable for B1/B2 learners.\n- Engage in an active, supportive conversation.\n- If the user makes a grammatical or vocabulary mistake, briefly and gently correct it, then immediately continue the conversation naturally.\n- Answer questions the user asks and propose relevant follow-up questions to keep the dialogue flowing.\n- Keep your turns reasonably concise so the learner has maximum speaking time.`
+    instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.\n\nThe user is practicing German at the intermediate (B1/B2) level.\n\nRules for your responses:\n- Speak exclusively in natural, conversational German suitable for B1/B2 learners.\n- Engage in an active, supportive conversation.\n- If the user makes a grammatical or vocabulary mistake, briefly and gently correct it, then immediately continue the conversation naturally.\n- Answer questions the user asks and propose relevant follow-up questions to keep the dialogue flowing.\n- Keep your turns reasonably concise so the learner has maximum speaking time.`
   },
   "jean-paul": {
     name: "Jean-Paul",
     lang: "fr-FR",
     voice: "Charon",
-    model: "models/gemini-3.8-live",
     googleSearch: true,
-    instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.\n\nThe user is practicing French at the beginner/elementary (A1/A2) level.\nAlways transcribe and interpret the user's speech as French, even if their pronunciation is accented or incomplete. Do not transcribe or interpret user speech as other languages.\n\nRules for your responses:\n- Speak exclusively in clear, simple French appropriate for A1/A2 level learners (common words, clear syntax, moderate pace).\n- Be very patient and encouraging.\n- If the user makes a mistake, provide a quick, gentle correction, and continue smoothly.\n- Ask simple, clear questions to prompt the learner to respond.\n- Keep responses short to give the learner the floor to practice speaking.`
+    instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.\n\nThe user is practicing French at the beginner/elementary (A1/A2) level.\n\nRules for your responses:\n- Speak exclusively in clear, simple French appropriate for A1/A2 level learners (common words, clear syntax, moderate pace).\n- Be very patient and encouraging.\n- If the user makes a mistake, provide a quick, gentle correction, and continue smoothly.\n- Ask simple, clear questions to prompt the learner to respond.\n- Keep responses short to give the learner the floor to practice speaking.`
   }
 };
 
@@ -859,7 +853,9 @@ const volumeControl = document.getElementById("volumeControl");
 const volumeVal = document.getElementById("volumeVal");
 const googleSearchToggle = document.getElementById("googleSearchToggle");
 const textInput = document.getElementById("textInput");
-const sendBtn = document.getElementById("sendBtn");
+const toggleBtn = document.getElementById("toggleBtn");
+const chat = document.getElementById("chat");
+const meter = document.getElementById("audioMeter");
 
 /* ── THEME SWITCHER ─────────────────────────────────── */
 function toggleTheme() {
@@ -883,8 +879,7 @@ function toggleAccordion(btn) {
 }
 
 function toggleKeysModal(show) {
-  const modal = document.getElementById('keysModal');
-  modal.classList.toggle('open', show);
+  document.getElementById('keysModal').classList.toggle('open', show);
 }
 
 /* ── BASE64 UTF-8 HELPERS ───────────────────────────── */
@@ -916,12 +911,10 @@ async function fetchPersonasFromGitHub() {
       return;
     }
     if (!res.ok) throw new Error(`GitHub API Error: ${res.statusText}`);
-    
+
     const data = await res.json();
     githubFileSha = data.sha;
-    const jsonStr = decodeBase64toUTF8(data.content);
-    
-    const fetchedPersonas = JSON.parse(jsonStr);
+    const fetchedPersonas = JSON.parse(decodeBase64toUTF8(data.content));
     if (Object.keys(fetchedPersonas).length > 0) {
       PRESETS = fetchedPersonas;
     }
@@ -933,19 +926,16 @@ async function fetchPersonasFromGitHub() {
 
 async function savePersonasToGitHub() {
   const token = ghTokenInput.value.trim();
-  
+
   if (!token) {
     toast('error', 'GitHub Token Missing', 'Please enter your GitHub PAT in the keys menu to save changes.');
     return;
   }
 
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
-  const jsonStr = JSON.stringify(PRESETS, null, 2);
-  const base64Content = encodeUTF8toBase64(jsonStr);
-
   const payload = {
     message: "Update personas via Virtual Assistant",
-    content: base64Content,
+    content: encodeUTF8toBase64(JSON.stringify(PRESETS, null, 2)),
     branch: "main"
   };
   if (githubFileSha) {
@@ -983,21 +973,14 @@ async function savePersonasToGitHub() {
 
 /* ── PERSONA MANAGEMENT ─────────────────────────────── */
 function populatePersonaDropdown() {
-  const currentVal = localStorage.getItem("va_persona") || Object.keys(PRESETS)[0];
+  const saved = localStorage.getItem("va_persona");
   personaSelect.innerHTML = "";
-  
+
   for (const [key, preset] of Object.entries(PRESETS)) {
-    const opt = document.createElement("option");
-    opt.value = key;
-    opt.textContent = preset.name;
-    personaSelect.appendChild(opt);
+    personaSelect.add(new Option(preset.name, key));
   }
 
-  if (PRESETS[currentVal]) {
-    personaSelect.value = currentVal;
-  } else {
-    personaSelect.value = Object.keys(PRESETS)[0];
-  }
+  personaSelect.value = PRESETS[saved] ? saved : Object.keys(PRESETS)[0];
   applyPersona(personaSelect.value);
 }
 
@@ -1008,17 +991,6 @@ function applyPersona(personaKey) {
   personaSelect.value = personaKey;
   langSelect.value = preset.lang || "de-DE";
   voiceSelect.value = preset.voice || DEFAULT_VOICE;
-
-  if (preset.model) {
-    if (![...modelSelect.options].some(o => o.value === preset.model)) {
-      const opt = document.createElement("option");
-      opt.value = preset.model;
-      opt.textContent = preset.model.replace("models/", "");
-      modelSelect.appendChild(opt);
-    }
-    modelSelect.value = preset.model;
-  }
-
   googleSearchToggle.checked = preset.googleSearch !== false;
   promptInput.value = preset.instruction || "";
   textInput.placeholder = `Type a message to ${preset.name} or speak...`;
@@ -1026,16 +998,19 @@ function applyPersona(personaKey) {
   localStorage.setItem("va_persona", personaKey);
 }
 
+function readPersonaFields() {
+  return {
+    lang: langSelect.value,
+    voice: voiceSelect.value,
+    googleSearch: googleSearchToggle.checked,
+    instruction: promptInput.value
+  };
+}
+
 function saveCurrentPersona() {
   const key = personaSelect.value;
   if (!PRESETS[key]) return;
-
-  PRESETS[key].lang = langSelect.value;
-  PRESETS[key].voice = voiceSelect.value;
-  PRESETS[key].model = modelSelect.value;
-  PRESETS[key].googleSearch = googleSearchToggle.checked;
-  PRESETS[key].instruction = promptInput.value;
-
+  Object.assign(PRESETS[key], readPersonaFields());
   savePersonasToGitHub();
 }
 
@@ -1049,24 +1024,14 @@ function saveAsNewPersona() {
     return;
   }
 
-  PRESETS[newKey] = {
-    name: newName,
-    lang: langSelect.value,
-    voice: voiceSelect.value,
-    model: modelSelect.value,
-    googleSearch: googleSearchToggle.checked,
-    instruction: promptInput.value
-  };
-
+  PRESETS[newKey] = { name: newName, ...readPersonaFields() };
+  localStorage.setItem("va_persona", newKey);
   populatePersonaDropdown();
-  personaSelect.value = newKey;
-  applyPersona(newKey);
   savePersonasToGitHub();
 }
 
 function deleteCurrentPersona() {
-  const keys = Object.keys(PRESETS);
-  if (keys.length <= 1) {
+  if (Object.keys(PRESETS).length <= 1) {
     toast('warning', 'Cannot Delete', 'You must keep at least one persona.');
     return;
   }
@@ -1082,15 +1047,15 @@ function deleteCurrentPersona() {
 }
 
 /* ── SETTINGS PERSISTENCE & INITIALIZATION ──────────── */
+MODELS.forEach(m => modelSelect.add(new Option(m.label, m.id)));
+const savedModel = localStorage.getItem("va_model");
+modelSelect.value = MODELS.some(m => m.id === savedModel) ? savedModel : DEFAULT_MODEL;
+modelSelect.addEventListener("change", () => localStorage.setItem("va_model", modelSelect.value));
+
 apiKeyInput.value = localStorage.getItem("va_api_key") || "";
 ghTokenInput.value = localStorage.getItem("va_gh_token") || "";
 
-apiKeyInput.addEventListener("change", () => {
-  const key = apiKeyInput.value.trim();
-  localStorage.setItem("va_api_key", key);
-  if (key) detectAvailableLiveModels(key, true);
-});
-
+apiKeyInput.addEventListener("change", () => localStorage.setItem("va_api_key", apiKeyInput.value.trim()));
 ghTokenInput.addEventListener("change", () => localStorage.setItem("va_gh_token", ghTokenInput.value.trim()));
 personaSelect.addEventListener("change", (e) => applyPersona(e.target.value));
 
@@ -1110,80 +1075,22 @@ textInput.addEventListener("keydown", (e) => {
   }
 });
 
-// Boot Sequence
-window.addEventListener('DOMContentLoaded', async () => {
-  if (apiKeyInput.value.trim()) {
-    detectAvailableLiveModels(apiKeyInput.value.trim(), true);
-  }
-  await fetchPersonasFromGitHub();
-});
-
-/* ── DYNAMIC MODEL DETECTION ── */
-async function detectAvailableLiveModels(key, silent = false) {
-  if (!key) return;
-
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=100`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    
-    const liveModels = (data.models || []).filter(m => {
-      const isBidi = Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes("bidiGenerateContent");
-      const name = (m.name || "").toLowerCase();
-      const displayName = (m.displayName || "").toLowerCase();
-      const isTranslate = name.includes("translate") || displayName.includes("translate");
-      const isTranscribe = name.includes("transcribe") || displayName.includes("transcribe");
-      return isBidi && !isTranslate && !isTranscribe;
-    });
-
-    if (liveModels.length > 0) {
-      const currentSelected = modelSelect.value;
-      modelSelect.innerHTML = "";
-      
-      liveModels.forEach(m => {
-        const opt = document.createElement("option");
-        opt.value = m.name;
-        opt.textContent = `${m.displayName || m.name.replace("models/", "")}`;
-        modelSelect.appendChild(opt);
-      });
-
-      if (!liveModels.some(m => m.name === FALLBACK_MODEL)) {
-        const fallbackOpt = document.createElement("option");
-        fallbackOpt.value = FALLBACK_MODEL;
-        fallbackOpt.textContent = "Gemini 2.5 Flash Native Audio (Fallback)";
-        modelSelect.appendChild(fallbackOpt);
-      }
-
-      if (![...modelSelect.options].some(o => o.value === currentSelected)) {
-        const opt = document.createElement("option");
-        opt.value = currentSelected;
-        opt.textContent = currentSelected.replace("models/", "");
-        modelSelect.appendChild(opt);
-      }
-      modelSelect.value = currentSelected;
-    }
-  } catch (err) {
-    if (!silent) console.error("Model Detection Failed", err.message);
-  }
-}
-
 /* ── TOASTER ────────────────────────────────────────── */
 const TOAST_ICONS = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
-const TOAST_CLASSES = { success: 'toast-success', error: 'toast-error', warning: 'toast-warning', info: 'toast-info' };
 function toast(type, title, msg, duration = 4000) {
-  const container = document.getElementById('toast-container');
   const el = document.createElement('div');
-  el.className = 'toast ' + (TOAST_CLASSES[type] || 'toast-info');
+  el.className = 'toast toast-' + (TOAST_ICONS[type] ? type : 'info');
   el.innerHTML =
-    '<div class="toast-body">' +
-      '<div class="toast-title">' + (TOAST_ICONS[type] ? TOAST_ICONS[type] + ' ' : '') + title + '</div>' +
-      (msg ? '<div class="toast-msg">' + msg + '</div>' : '') +
-    '</div>' +
-    '<button class="toast-close" onclick="dismissToast(this.parentElement)">×</button>' +
-    '<div class="toast-progress" style="animation-duration:' + duration + 'ms"></div>';
-  container.appendChild(el);
-  const timer = setTimeout(() => dismissToast(el), duration);
-  el._timer = timer;
+    '<div class="toast-body"><div class="toast-title"></div><div class="toast-msg"></div></div>' +
+    '<button class="toast-close">×</button>' +
+    '<div class="toast-progress"></div>';
+  el.querySelector('.toast-title').textContent = (TOAST_ICONS[type] ? TOAST_ICONS[type] + ' ' : '') + title;
+  const msgEl = el.querySelector('.toast-msg');
+  if (msg) msgEl.textContent = msg; else msgEl.remove();
+  el.querySelector('.toast-close').addEventListener('click', () => dismissToast(el));
+  el.querySelector('.toast-progress').style.animationDuration = duration + 'ms';
+  document.getElementById('toast-container').appendChild(el);
+  el._timer = setTimeout(() => dismissToast(el), duration);
 }
 function dismissToast(el) {
   if (!el || !el.parentElement) return;
@@ -1194,6 +1101,7 @@ function dismissToast(el) {
 
 /* ── APPLICATION STATE ─────────────────────────────── */
 let ws = null;
+let currentModel = DEFAULT_MODEL;
 let micStream = null;
 let audioContext = null;
 let processor = null;
@@ -1203,155 +1111,72 @@ let currentVolume = 1;
 let nextPlayTime = 0;
 let activeSources = [];
 
-let isConnected = false;
 let isSetupComplete = false;
 let isAssistantSpeaking = false;
-let isFallingBack = false;
+let retriedAfter1007 = false;
 
 let currentUserMsgEl = null;
 let currentAssistantMsgEl = null;
 
 function setStatus(text, dotClass = "") {
   const dot = document.getElementById("statusDot");
-  if(dot) {
-    dot.className = "dot " + dotClass;
-    dot.title = text;
-  }
+  dot.className = "dot " + dotClass;
+  dot.title = text;
+}
+
+// state: "idle" | "connecting" | "live"
+function setUiState(state) {
+  toggleBtn.disabled = state === "connecting";
+  toggleBtn.innerText = { idle: "Start", connecting: "Connecting...", live: "Stop" }[state];
+  toggleBtn.className = "btn " + (state === "live" ? "btn-danger" : "btn-primary");
+  personaSelect.disabled = modelSelect.disabled = state !== "idle";
 }
 
 function getAssistantSpeakerLabel() {
-  const currentP = personaSelect.value;
-  return PRESETS[currentP] ? PRESETS[currentP].name : 'Assistant';
+  return PRESETS[personaSelect.value]?.name || 'Assistant';
+}
+
+function languageName() {
+  // "German (de-DE)" -> "German"
+  return langSelect.selectedOptions[0].text.split(" (")[0];
+}
+
+function scrollChat() {
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function appendMessage(sender, text = "") {
-  const chat = document.getElementById("chat");
   const msg = document.createElement("div");
   msg.className = `msg msg-${sender}`;
-  const speakerLabel = sender === 'user' ? 'You' : getAssistantSpeakerLabel();
-  msg.innerHTML = `<div class="msg-speaker">${speakerLabel}</div><div class="content">${text}</div>`;
+  const speaker = document.createElement("div");
+  speaker.className = "msg-speaker";
+  speaker.textContent = sender === 'user' ? 'You' : getAssistantSpeakerLabel();
+  const content = document.createElement("div");
+  content.className = "content";
+  content.textContent = text;
+  msg.append(speaker, content);
   chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
-  return msg.querySelector(".content");
+  scrollChat();
+  return content;
 }
 
-/* ── SEND TYPED TEXT ─────────────────────────────────── */
-async function handleSendText() {
-  const text = textInput.value.trim();
-  if (!text) return;
-
-  if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) {
-    await startSession();
-    let waited = 0;
-    while (!isSetupComplete && waited < 5000 && isConnected) {
-      await new Promise(r => setTimeout(r, 100));
-      waited += 100;
-    }
-    if (!isSetupComplete || !ws || ws.readyState !== WebSocket.OPEN) {
-      toast('error', 'Connection Error', 'Could not establish connection to send message.');
-      return;
-    }
-  }
-
-  stopAudioPlayback();
-
-  currentUserMsgEl = null;
-  currentAssistantMsgEl = null;
-
-  appendMessage("user", text);
-
-  const payload = {
-    clientContent: {
-      turns: [
-        {
-          role: "user",
-          parts: [{ text: text }]
-        }
-      ],
-      turnComplete: true
-    }
-  };
-
-  try {
-    ws.send(JSON.stringify(payload));
-  } catch (err) {
-    toast('error', 'Send Error', err.message);
-    return;
-  }
-
-  textInput.value = "";
-  textInput.focus();
-}
-
-function checkIsQuotaError(reason = "", code = 0, status = "") {
-  const text = (String(reason) + " " + String(code) + " " + String(status)).toLowerCase();
-  return (
-    text.includes("quota") ||
-    text.includes("resource_exhausted") ||
-    text.includes("resourceexhausted") ||
-    text.includes("rate limit") ||
-    text.includes("ratelimit") ||
-    text.includes("exceeded") ||
-    text.includes("429")
-  );
-}
-
-async function triggerFallback() {
-  isFallingBack = true;
-  toast('warning', 'Quota Reached', 'Switching automatically to fallback: Gemini 2.5 Flash Native Audio...', 5000);
-
-  if (![...modelSelect.options].some(o => o.value === FALLBACK_MODEL)) {
-    const opt = document.createElement("option");
-    opt.value = FALLBACK_MODEL;
-    opt.textContent = "Gemini 2.5 Flash Native Audio (Fallback)";
-    modelSelect.appendChild(opt);
-  }
-  modelSelect.value = FALLBACK_MODEL;
-  
-  if (ws) {
-    ws.onclose = null;
-    ws.onerror = null;
-    ws.close();
-    ws = null;
-  }
-  stopAudioPlayback();
-  isSetupComplete = false;
-  setStatus("Switching to Gemini 2.5...", "");
-
-  setTimeout(async () => {
-    try {
-      await connectWebSocket(FALLBACK_MODEL);
-    } catch (e) {
-      toast('error', 'Fallback Failed', e.message);
-      stopSession();
-    }
-  }, 250);
-}
-
+/* ── SESSION CONTROL ────────────────────────────────── */
 async function toggleSession() {
-  if (isConnected) stopSession();
+  if (ws) stopSession();
   else await startSession();
 }
 
 async function startSession() {
-  const key = apiKeyInput.value.trim();
-  const currentP = personaSelect.value;
-  const model = modelSelect ? modelSelect.value : (PRESETS[currentP]?.model || DEFAULT_MODEL);
-
-  if (!key) {
+  if (!apiKeyInput.value.trim()) {
     toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the keys menu.');
     toggleKeysModal(true);
     apiKeyInput.focus();
-    return;
+    return false;
   }
 
-  isFallingBack = false;
+  retriedAfter1007 = false;
   setStatus("Connecting...", "");
-  const toggleBtn = document.getElementById("toggleBtn");
-  toggleBtn.innerText = "Connecting...";
-  toggleBtn.disabled = true;
-  personaSelect.disabled = true;
-  modelSelect.disabled = true;
+  setUiState("connecting");
 
   try {
     await initMicrophone();
@@ -1360,84 +1185,90 @@ async function startSession() {
     toast('info', 'Text-only Mode', 'Microphone not accessible. You can chat by typing.');
   }
 
-  await connectWebSocket(model);
+  connect(modelSelect.value);
+  return true;
 }
 
-async function connectWebSocket(activeModel) {
-  const key = apiKeyInput.value.trim();
+function closeSocket() {
+  if (!ws) return;
+  ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+  ws.close();
+  ws = null;
+}
+
+function isQuotaError(text = "", code = 0) {
+  return code === 429 || /quota|resource_exhausted|rate.?limit/i.test(String(text));
+}
+
+// Returns true if the failure was handled by reconnecting.
+function recover(text, code) {
+  if (isQuotaError(text, code) && currentModel !== FALLBACK_MODEL) {
+    reconnect(FALLBACK_MODEL, 'Quota Reached', 'Switching to Gemini 2.5 Flash Native Audio (Google Search off)...');
+    return true;
+  }
+  // Google sometimes drops native-audio sessions mid-call with 1007. One automatic retry per session.
+  if (code === 1007 && !retriedAfter1007) {
+    retriedAfter1007 = true;
+    reconnect(currentModel, 'Connection dropped', 'Reconnecting (conversation context starts fresh)...');
+    return true;
+  }
+  return false;
+}
+
+function reconnect(model, title, msg) {
+  toast('warning', title, msg, 5000);
+  closeSocket();
+  stopAudioPlayback();
+  isSetupComplete = false;
+  currentUserMsgEl = currentAssistantMsgEl = null;
+  modelSelect.value = model;
+  setStatus("Reconnecting...", "");
+  connect(model);
+}
+
+function connect(model) {
+  currentModel = model;
   const lang = langSelect.value;
-  const currentP = personaSelect.value;
-  let voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
-  
-  if (!VALID_GEMINI_VOICES.includes(voice)) voice = DEFAULT_VOICE;
+  const langName = languageName();
+  const instruction =
+    `${promptInput.value.trim()}\n\nThe user speaks ${langName} by default. ` +
+    `Always interpret their speech as ${langName}, even if their pronunciation is accented or imperfect.`;
+  // Google Search is off on the fallback model: 1007 drops were reported right when native-audio models make a tool call.
+  const useSearch = googleSearchToggle.checked && model !== FALLBACK_MODEL;
 
-  const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
-  const enableSearch = googleSearchToggle.checked;
-  const toggleBtn = document.getElementById("toggleBtn");
-
-  setStatus("Connecting...", "");
-
-  const endpoint = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${key}`;
+  const endpoint = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKeyInput.value.trim()}`;
   ws = new WebSocket(endpoint);
 
   ws.onopen = () => {
-    const tools = [];
-    if (enableSearch) tools.push({ googleSearch: {} });
-
-    // Derive language codes (e.g. ["de-DE", "de"]) to lock STT recognition to this language
-    const langCodes = [lang];
-    if (lang.includes('-')) {
-      const baseLang = lang.split('-')[0];
-      if (!langCodes.includes(baseLang)) {
-        langCodes.push(baseLang);
-      }
-    }
-
-    const setupMessage = {
+    ws.send(JSON.stringify({
       setup: {
-        model: activeModel,
+        model,
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: voice }
-            }
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceSelect.value || DEFAULT_VOICE } }
           }
         },
-        ...(tools.length > 0 ? { tools } : {}),
-        inputAudioTranscription: { languageCodes: langCodes },
+        ...(useSearch ? { tools: [{ googleSearch: {} }] } : {}),
+        inputAudioTranscription: { languageCodes: [lang, lang.split('-')[0]] },
         outputAudioTranscription: {},
         systemInstruction: { parts: [{ text: instruction }] }
       }
-    };
-
-    ws.send(JSON.stringify(setupMessage));
-    isConnected = true;
-    toggleBtn.disabled = false;
-    toggleBtn.innerText = "Stop";
-    toggleBtn.className = "btn btn-danger";
-    setStatus("Ready! Speak or type", "connected");
+    }));
+    setUiState("live");
   };
 
   ws.onmessage = async (event) => {
     let msg;
     try {
-      if (event.data instanceof Blob) {
-        msg = JSON.parse(await event.data.text());
-      } else {
-        msg = JSON.parse(event.data);
-      }
+      msg = JSON.parse(event.data instanceof Blob ? await event.data.text() : event.data);
     } catch (e) {
       return;
     }
 
     if (msg.error) {
       const errMsg = msg.error.message || JSON.stringify(msg.error);
-      const isQuota = checkIsQuotaError(errMsg, msg.error.code, msg.error.status);
-      if (isQuota && activeModel !== FALLBACK_MODEL && !isFallingBack) {
-        triggerFallback();
-        return;
-      }
+      if (recover(`${errMsg} ${msg.error.status || ""}`, msg.error.code)) return;
       toast('error', 'API Error', errMsg);
       stopSession();
       return;
@@ -1445,39 +1276,29 @@ async function connectWebSocket(activeModel) {
 
     if (msg.setupComplete) {
       isSetupComplete = true;
-      setStatus("Ready! Speak or type", "connected");
-      if (isFallingBack) {
-        toast('success', 'Fallback Active', 'Connected to Gemini 2.5 Flash Native Audio.');
-        isFallingBack = false;
-      } else {
-        toast('success', 'Connected', 'Conversation session is active.');
-      }
+      setStatus(READY_TEXT, "connected");
+      toast('success', 'Connected', MODELS.find(m => m.id === currentModel)?.label || currentModel);
       return;
     }
 
     const serverContent = msg.serverContent;
     if (!serverContent) return;
 
-    // Spoken microphone transcription
+    // Spoken microphone transcription (display only; the model hears the audio directly)
     const userText = serverContent.inputTranscription?.text;
     if (userText && userText.trim()) {
       if (!currentUserMsgEl) currentUserMsgEl = appendMessage("user");
       currentUserMsgEl.textContent += userText;
-      const chat = document.getElementById("chat");
-      chat.scrollTop = chat.scrollHeight;
+      scrollChat();
     }
 
     // Audio stream from assistant
-    if (serverContent.modelTurn?.parts) {
+    const audioParts = (serverContent.modelTurn?.parts || []).filter(p => p.inlineData?.data);
+    if (audioParts.length) {
       isAssistantSpeaking = true;
       currentUserMsgEl = null;
       setStatus(`${getAssistantSpeakerLabel()} is speaking...`, "speaking");
-
-      for (const part of serverContent.modelTurn.parts) {
-        if (part.inlineData?.data) {
-          playAudioChunk(part.inlineData.data);
-        }
-      }
+      audioParts.forEach(p => playAudioChunk(p.inlineData.data));
     }
 
     // Spoken response transcript
@@ -1486,12 +1307,12 @@ async function connectWebSocket(activeModel) {
       currentUserMsgEl = null;
       if (!currentAssistantMsgEl) currentAssistantMsgEl = appendMessage("assistant");
       currentAssistantMsgEl.textContent += assistantText;
-      const chat = document.getElementById("chat");
-      chat.scrollTop = chat.scrollHeight;
+      scrollChat();
     }
 
     if (serverContent.interrupted) {
       stopAudioPlayback();
+      setStatus(READY_TEXT, "connected");
       currentAssistantMsgEl = null;
     }
 
@@ -1504,18 +1325,75 @@ async function connectWebSocket(activeModel) {
 
   ws.onclose = (event) => {
     if (event.code !== 1000) {
-      const isQuota = checkIsQuotaError(event.reason, event.code);
-      if (isQuota && activeModel !== FALLBACK_MODEL && !isFallingBack) {
-        triggerFallback();
-        return;
-      }
-      let extra = event.reason || 'Check your API key and connection.';
-      toast('error', `Disconnected (${event.code})`, extra, 6000);
+      if (recover(event.reason, event.code)) return;
+      toast('error', `Disconnected (${event.code})`, event.reason || 'Check your API key and connection.', 6000);
     }
     stopSession();
   };
 }
 
+function stopSession() {
+  isSetupComplete = false;
+  isAssistantSpeaking = false;
+  currentUserMsgEl = currentAssistantMsgEl = null;
+
+  stopAudioPlayback();
+
+  meter.classList.remove("active");
+  meter.querySelectorAll(".audio-meter-bar").forEach(b => b.style.height = "4px");
+
+  if (processor) {
+    processor.onaudioprocess = null;
+    processor.disconnect();
+    processor = null;
+  }
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+  }
+  closeSocket();
+
+  setUiState("idle");
+  setStatus("Disconnected", "");
+}
+
+/* ── SEND TYPED TEXT ─────────────────────────────────── */
+async function handleSendText() {
+  const text = textInput.value.trim();
+  if (!text) return;
+
+  if (!ws && !(await startSession())) return;
+
+  // Wait for the session to finish setup (up to 8s)
+  for (let waited = 0; !isSetupComplete && ws && waited < 8000; waited += 100) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  if (!isSetupComplete || !ws || ws.readyState !== WebSocket.OPEN) {
+    toast('error', 'Connection Error', 'Could not establish connection to send message.');
+    return;
+  }
+
+  stopAudioPlayback();
+  currentUserMsgEl = currentAssistantMsgEl = null;
+  appendMessage("user", text);
+
+  try {
+    // realtimeInput works on all Live models; clientContent is rejected after the first turn on newer ones.
+    ws.send(JSON.stringify({ realtimeInput: { text } }));
+  } catch (err) {
+    toast('error', 'Send Error', err.message);
+    return;
+  }
+
+  textInput.value = "";
+  textInput.focus();
+}
+
+/* ── AUDIO IN (MICROPHONE) ───────────────────────────── */
 async function initMicrophone() {
   if (micStream && audioContext && processor) return;
 
@@ -1523,13 +1401,13 @@ async function initMicrophone() {
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
   });
 
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  // Ask the browser for 16 kHz so it resamples with a proper filter (no manual downsampling).
+  audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
   if (audioContext.state === "suspended") await audioContext.resume();
+  const mimeType = `audio/pcm;rate=${audioContext.sampleRate}`; // the API resamples if the browser ignored 16 kHz
 
   const source = audioContext.createMediaStreamSource(micStream);
-  processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-  const meter = document.getElementById("audioMeter");
+  processor = audioContext.createScriptProcessor(2048, 1, 1);
   const meterBars = meter.querySelectorAll(".audio-meter-bar");
 
   processor.onaudioprocess = (e) => {
@@ -1537,25 +1415,18 @@ async function initMicrophone() {
 
     let sum = 0;
     for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
-    const rms = Math.sqrt(sum / inputData.length);
-    const level = Math.min(5, Math.ceil(rms * 120));
+    const level = Math.min(5, Math.ceil(Math.sqrt(sum / inputData.length) * 120));
 
     meter.classList.toggle("active", level > 0);
     meterBars.forEach((bar, idx) => {
       bar.style.height = (idx < level) ? `${6 + idx * 2}px` : `4px`;
     });
 
-    if (!isConnected || !isSetupComplete || isAssistantSpeaking || !ws || ws.readyState !== WebSocket.OPEN) {
-      return;
-    }
-
-    const resampledData = downsample(inputData, audioContext.sampleRate, 16000);
-    const pcm16 = floatTo16BitPCM(resampledData);
-    const base64Audio = arrayBufferToBase64(pcm16);
+    if (!isSetupComplete || isAssistantSpeaking || !ws || ws.readyState !== WebSocket.OPEN) return;
 
     try {
       ws.send(JSON.stringify({
-        realtimeInput: { audio: { mimeType: "audio/pcm;rate=16000", data: base64Audio } }
+        realtimeInput: { audio: { mimeType, data: arrayBufferToBase64(floatTo16BitPCM(inputData)) } }
       }));
     } catch (err) {}
   };
@@ -1567,6 +1438,24 @@ async function initMicrophone() {
   mute.connect(audioContext.destination);
 }
 
+function floatTo16BitPCM(input) {
+  const buffer = new ArrayBuffer(input.length * 2);
+  const view = new DataView(buffer);
+  for (let i = 0; i < input.length; i++) {
+    const s = Math.max(-1, Math.min(1, input[i]));
+    view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return buffer;
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+/* ── AUDIO OUT (PLAYBACK) ────────────────────────────── */
 function playAudioChunk(base64PCM) {
   if (!playbackCtx) {
     playbackCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
@@ -1602,88 +1491,20 @@ function playAudioChunk(base64PCM) {
     activeSources = activeSources.filter(s => s !== source);
     if (activeSources.length === 0 && nextPlayTime <= playbackCtx.currentTime + 0.05) {
       isAssistantSpeaking = false;
-      setStatus("Ready! Speak or type", "connected");
+      setStatus(READY_TEXT, "connected");
     }
   };
 }
 
 function stopAudioPlayback() {
-  activeSources.forEach(s => { try { s.stop(); } catch(e){} });
+  activeSources.forEach(s => { s.onended = null; try { s.stop(); } catch(e){} });
   activeSources = [];
   if (playbackCtx) nextPlayTime = playbackCtx.currentTime;
   isAssistantSpeaking = false;
 }
 
-function stopSession() {
-  isConnected = false;
-  isSetupComplete = false;
-  isAssistantSpeaking = false;
-  isFallingBack = false;
-  currentUserMsgEl = null;
-  currentAssistantMsgEl = null;
-
-  stopAudioPlayback();
-
-  const meter = document.getElementById("audioMeter");
-  meter.classList.remove("active");
-  meter.querySelectorAll(".audio-meter-bar").forEach(b => b.style.height = "4px");
-
-  if (processor) {
-    processor.onaudioprocess = null;
-    processor.disconnect();
-    processor = null;
-  }
-  if (audioContext) {
-    audioContext.close();
-    audioContext = null;
-  }
-  if (micStream) {
-    micStream.getTracks().forEach(t => t.stop());
-    micStream = null;
-  }
-  if (ws) {
-    ws.onclose = null;
-    ws.onerror = null;
-    ws.close();
-    ws = null;
-  }
-
-  const toggleBtn = document.getElementById("toggleBtn");
-  toggleBtn.disabled = false;
-  toggleBtn.innerText = "Start";
-  toggleBtn.className = "btn btn-primary";
-  personaSelect.disabled = false;
-  modelSelect.disabled = false;
-  setStatus("Disconnected", "");
-}
-
-function downsample(buffer, fromRate, toRate) {
-  if (fromRate === toRate) return buffer;
-  const ratio = fromRate / toRate;
-  const newLength = Math.round(buffer.length / ratio);
-  const result = new Float32Array(newLength);
-  for (let i = 0; i < newLength; i++) {
-    result[i] = buffer[Math.min(Math.round(i * ratio), buffer.length - 1)];
-  }
-  return result;
-}
-
-function floatTo16BitPCM(input) {
-  const buffer = new ArrayBuffer(input.length * 2);
-  const view = new DataView(buffer);
-  for (let i = 0; i < input.length; i++) {
-    let s = Math.max(-1, Math.min(1, input[i]));
-    view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-  }
-  return buffer;
-}
-
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
+/* ── BOOT ────────────────────────────────────────────── */
+fetchPersonasFromGitHub();
 </script>
 </body>
 </html>
