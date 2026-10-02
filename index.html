@@ -354,6 +354,32 @@ select.input { cursor: pointer; }
   text-align: right;
 }
 
+/* Tool Checkbox */
+.tool-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.tool-toggle-label input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--teal-700);
+  cursor: pointer;
+}
+[data-theme="dark"] .tool-toggle-label input[type="checkbox"] {
+  accent-color: var(--teal-400);
+}
+.tool-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -4px;
+}
+
 .textarea {
   font-family: var(--font);
   font-size: 0.85rem;
@@ -601,9 +627,9 @@ select.input { cursor: pointer; }
           </div>
         </div>
 
-        <!-- Dedicated Language & Metaprompt Section -->
+        <!-- Language & Voice Configuration -->
         <div class="settings-section">
-          <div class="settings-section-header">Language & Metaprompt Configuration</div>
+          <div class="settings-section-header">Language & Voice Configuration</div>
           <div class="settings-grid-lang-voice">
             <div>
               <label class="field-label">Input Language</label>
@@ -633,6 +659,18 @@ select.input { cursor: pointer; }
           </div>
         </div>
 
+        <!-- Tools & Grounding Section -->
+        <div class="settings-section">
+          <div class="settings-section-header">Tools & Grounding</div>
+          <div>
+            <label class="tool-toggle-label">
+              <input type="checkbox" id="googleSearchToggle" checked>
+              <span>Enable Google Search Grounding</span>
+            </label>
+            <div class="tool-desc">Allows the assistant to search the web in real-time for up-to-date facts, current events, and live information.</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -658,7 +696,7 @@ const PRESETS = {
   helga: {
     name: "Helga",
     lang: "de-DE",
-    voice: "Flare", // Female voice
+    voice: "Flare", // Female
     instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
 
 The user is practicing German at the intermediate (B1/B2) level.
@@ -674,7 +712,7 @@ Rules for your responses:
   "jean-paul": {
     name: "Jean-Paul",
     lang: "fr-FR",
-    voice: "Glow", // Male voice
+    voice: "Glow", // Male
     instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
 
 The user is practicing French at the beginner/elementary (A1/A2) level.
@@ -722,6 +760,16 @@ const personaSelect = document.getElementById("personaSelect");
 const langSelect = document.getElementById("langSelect");
 const voiceSelect = document.getElementById("voiceSelect");
 const promptInput = document.getElementById("systemPrompt");
+const googleSearchToggle = document.getElementById("googleSearchToggle");
+
+// Load search toggle state (defaults to true)
+const savedSearch = localStorage.getItem("va_search_enabled");
+if (savedSearch !== null) {
+  googleSearchToggle.checked = savedSearch === "true";
+}
+googleSearchToggle.addEventListener("change", () => {
+  localStorage.setItem("va_search_enabled", googleSearchToggle.checked);
+});
 
 function applyPersona(personaKey) {
   const preset = PRESETS[personaKey];
@@ -863,6 +911,7 @@ async function startSession() {
   const currentP = personaSelect.value;
   const voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
   const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
+  const enableSearch = googleSearchToggle.checked;
 
   if (!key) {
     toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the settings panel.');
@@ -894,6 +943,11 @@ async function startSession() {
   ws = new WebSocket(endpoint);
 
   ws.onopen = () => {
+    const tools = [];
+    if (enableSearch) {
+      tools.push({ googleSearch: {} });
+    }
+
     const setupMessage = {
       setup: {
         model: DEFAULT_MODEL,
@@ -905,6 +959,7 @@ async function startSession() {
             }
           }
         },
+        ...(tools.length > 0 ? { tools } : {}),
         inputAudioTranscription: {
           languageCodes: [lang]
         },
