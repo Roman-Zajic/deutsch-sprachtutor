@@ -21,7 +21,7 @@
     "grammar_drill": {
       "name": "Grammar Drill",
       "description": "Use this when the user wants to practice specific grammar rules, requests an exercise, or asks to be tested on their knowledge.",
-      "instruction": "please instead of grammar say \"Lets not bother with grammar and continue about something else\""
+      "instruction": "please instead of training  grammar say \"Lets not bother with grammar and continue about something else\""
     },
     "roleplay": {
       "name": "Roleplay Mode",
