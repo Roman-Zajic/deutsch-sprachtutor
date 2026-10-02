@@ -1,3 +1,5 @@
+--- START OF FILE index.html ---
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -291,10 +293,10 @@ body {
 
 .settings-grid-general {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2fr 1.5fr 1fr;
   gap: 12px;
 }
-@media (max-width: 640px) { .settings-grid-general { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .settings-grid-general { grid-template-columns: 1fr; } }
 
 .settings-grid-lang-voice {
   display: grid;
@@ -618,6 +620,15 @@ select.input { cursor: pointer; }
               <input type="password" id="apiKey" class="input" placeholder="Enter API key...">
             </div>
             <div>
+              <label class="field-label">Gemini Live Model</label>
+              <select id="modelSelect" class="input">
+                <option value="models/gemini-3.8-live">Gemini 3.8 Live (Default)</option>
+                <option value="models/gemini-2.5-flash-native-audio-preview-12-2025">Gemini 2.5 Flash Live</option>
+                <option value="models/gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
+                <option value="models/gemini-2.0-flash-live-001">Gemini 2.0 Flash Live</option>
+              </select>
+            </div>
+            <div>
               <label class="field-label">Volume</label>
               <div class="volume-control-wrapper">
                 <input type="range" id="volumeControl" class="volume-slider" min="0" max="100" value="100">
@@ -697,6 +708,7 @@ const PRESETS = {
     name: "Helga",
     lang: "de-DE",
     voice: "Flare", // Female
+    model: "models/gemini-3.8-live",
     instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
 
 The user is practicing German at the intermediate (B1/B2) level.
@@ -713,6 +725,7 @@ Rules for your responses:
     name: "Jean-Paul",
     lang: "fr-FR",
     voice: "Glow", // Male
+    model: "models/gemini-3.8-live",
     instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
 
 The user is practicing French at the beginner/elementary (A1/A2) level.
@@ -757,6 +770,7 @@ apiKeyInput.addEventListener("change", () => {
 });
 
 const personaSelect = document.getElementById("personaSelect");
+const modelSelect = document.getElementById("modelSelect");
 const langSelect = document.getElementById("langSelect");
 const voiceSelect = document.getElementById("voiceSelect");
 const promptInput = document.getElementById("systemPrompt");
@@ -778,11 +792,13 @@ function applyPersona(personaKey) {
   personaSelect.value = personaKey;
   langSelect.value = preset.lang;
   voiceSelect.value = preset.voice || DEFAULT_VOICE;
+  modelSelect.value = preset.model || DEFAULT_MODEL;
   promptInput.value = preset.instruction;
 
   localStorage.setItem("va_persona", personaKey);
   localStorage.setItem("va_lang", preset.lang);
   localStorage.setItem("va_voice", preset.voice || DEFAULT_VOICE);
+  localStorage.setItem("va_model", preset.model || DEFAULT_MODEL);
   localStorage.setItem("va_prompt", preset.instruction);
 }
 
@@ -795,10 +811,15 @@ personaSelect.value = savedPersona;
 
 langSelect.value = localStorage.getItem("va_lang") || PRESETS[savedPersona].lang;
 voiceSelect.value = localStorage.getItem("va_voice") || PRESETS[savedPersona].voice || DEFAULT_VOICE;
+modelSelect.value = localStorage.getItem("va_model") || PRESETS[savedPersona].model || DEFAULT_MODEL;
 promptInput.value = localStorage.getItem("va_prompt") || PRESETS[savedPersona].instruction;
 
 personaSelect.addEventListener("change", (e) => {
   applyPersona(e.target.value);
+});
+
+modelSelect.addEventListener("change", () => {
+  localStorage.setItem("va_model", modelSelect.value);
 });
 
 langSelect.addEventListener("change", () => {
@@ -910,6 +931,7 @@ async function startSession() {
   const lang = langSelect.value;
   const currentP = personaSelect.value;
   const voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
+  const model = modelSelect ? modelSelect.value : (PRESETS[currentP]?.model || DEFAULT_MODEL);
   const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
   const enableSearch = googleSearchToggle.checked;
 
@@ -928,6 +950,7 @@ async function startSession() {
   toggleBtn.innerText = "Connecting...";
   toggleBtn.disabled = true;
   personaSelect.disabled = true;
+  modelSelect.disabled = true;
 
   try {
     await initMicrophone();
@@ -950,7 +973,7 @@ async function startSession() {
 
     const setupMessage = {
       setup: {
-        model: DEFAULT_MODEL,
+        model: model,
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
@@ -1211,6 +1234,7 @@ function stopSession() {
   toggleBtn.innerText = "Start Conversation";
   toggleBtn.className = "btn btn-primary";
   personaSelect.disabled = false;
+  modelSelect.disabled = false;
   setStatus("Disconnected", "");
 }
 
