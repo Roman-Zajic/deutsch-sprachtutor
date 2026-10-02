@@ -115,9 +115,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: nowrap; /* Forces single line */
+  flex-wrap: nowrap;
   gap: 16px;
-  overflow-x: auto;  /* Graceful scroll if viewport is extremely narrow */
+  overflow-x: auto;
   scrollbar-width: none;
 }
 .card-header-row::-webkit-scrollbar { display: none; }
@@ -295,6 +295,13 @@ body {
   gap: 12px;
 }
 @media (max-width: 640px) { .settings-grid-general { grid-template-columns: 1fr; } }
+
+.settings-grid-lang-voice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) { .settings-grid-lang-voice { grid-template-columns: 1fr; } }
 
 .field-label {
   font-size: 0.75rem;
@@ -597,14 +604,26 @@ select.input { cursor: pointer; }
         <!-- Dedicated Language & Metaprompt Section -->
         <div class="settings-section">
           <div class="settings-section-header">Language & Metaprompt Configuration</div>
-          <div>
-            <label class="field-label">Input Language</label>
-            <select id="langSelect" class="input" style="max-width: 320px;">
-              <option value="de-DE">German (de-DE)</option>
-              <option value="fr-FR">French (fr-FR)</option>
-              <option value="en-US">English (en-US)</option>
-              <option value="pl-PL">Polish (pl-PL)</option>
-            </select>
+          <div class="settings-grid-lang-voice">
+            <div>
+              <label class="field-label">Input Language</label>
+              <select id="langSelect" class="input">
+                <option value="de-DE">German (de-DE)</option>
+                <option value="fr-FR">French (fr-FR)</option>
+                <option value="en-US">English (en-US)</option>
+                <option value="pl-PL">Polish (pl-PL)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Assistant Voice</label>
+              <select id="voiceSelect" class="input">
+                <option value="Charon">Charon (Male)</option>
+                <option value="Puck">Puck (Male)</option>
+                <option value="Fenrir">Fenrir (Male)</option>
+                <option value="Aoede">Aoede (Female)</option>
+                <option value="Kore">Kore (Female)</option>
+              </select>
+            </div>
           </div>
           <div>
             <label class="field-label">Metaprompt (System Instruction)</label>
@@ -637,6 +656,7 @@ const PRESETS = {
   helga: {
     name: "Helga",
     lang: "de-DE",
+    voice: "Aoede", // Female voice
     instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
 
 The user is practicing German at the intermediate (B1/B2) level.
@@ -652,6 +672,7 @@ Rules for your responses:
   "jean-paul": {
     name: "Jean-Paul",
     lang: "fr-FR",
+    voice: "Charon", // Male voice
     instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
 
 The user is practicing French at the beginner/elementary (A1/A2) level.
@@ -697,6 +718,7 @@ apiKeyInput.addEventListener("change", () => {
 
 const personaSelect = document.getElementById("personaSelect");
 const langSelect = document.getElementById("langSelect");
+const voiceSelect = document.getElementById("voiceSelect");
 const promptInput = document.getElementById("systemPrompt");
 
 function applyPersona(personaKey) {
@@ -705,10 +727,12 @@ function applyPersona(personaKey) {
 
   personaSelect.value = personaKey;
   langSelect.value = preset.lang;
+  voiceSelect.value = preset.voice || DEFAULT_VOICE;
   promptInput.value = preset.instruction;
 
   localStorage.setItem("va_persona", personaKey);
   localStorage.setItem("va_lang", preset.lang);
+  localStorage.setItem("va_voice", preset.voice || DEFAULT_VOICE);
   localStorage.setItem("va_prompt", preset.instruction);
 }
 
@@ -720,6 +744,7 @@ if (!PRESETS[savedPersona]) {
 personaSelect.value = savedPersona;
 
 langSelect.value = localStorage.getItem("va_lang") || PRESETS[savedPersona].lang;
+voiceSelect.value = localStorage.getItem("va_voice") || PRESETS[savedPersona].voice || DEFAULT_VOICE;
 promptInput.value = localStorage.getItem("va_prompt") || PRESETS[savedPersona].instruction;
 
 personaSelect.addEventListener("change", (e) => {
@@ -728,6 +753,10 @@ personaSelect.addEventListener("change", (e) => {
 
 langSelect.addEventListener("change", () => {
   localStorage.setItem("va_lang", langSelect.value);
+});
+
+voiceSelect.addEventListener("change", () => {
+  localStorage.setItem("va_voice", voiceSelect.value);
 });
 
 promptInput.addEventListener("input", () => {
@@ -830,6 +859,7 @@ async function startSession() {
   const key = apiKeyInput.value.trim();
   const lang = langSelect.value;
   const currentP = personaSelect.value;
+  const voice = voiceSelect ? voiceSelect.value : (PRESETS[currentP]?.voice || DEFAULT_VOICE);
   const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
 
   if (!key) {
@@ -869,7 +899,7 @@ async function startSession() {
           responseModalities: ["AUDIO"],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: DEFAULT_VOICE }
+              prebuiltVoiceConfig: { voiceName: voice }
             }
           }
         },
