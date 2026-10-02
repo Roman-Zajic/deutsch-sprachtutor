@@ -85,6 +85,33 @@ body {
   gap: 10px;
 }
 
+/* Navbar Volume Control */
+.nav-volume-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 16px;
+  padding-right: 16px;
+  border-right: 1px solid rgba(149,223,219,.30);
+}
+.nav-volume-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--teal-100);
+}
+.nav-volume-slider {
+  width: 80px;
+  accent-color: var(--teal-400);
+  cursor: pointer;
+}
+.nav-volume-val {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--teal-100);
+  min-width: 36px;
+  text-align: right;
+}
+
 .icon-btn {
   font-family: var(--font);
   font-size: 0.8125rem;
@@ -243,25 +270,14 @@ body {
 }
 
 /* ── STATUS & AUDIO METER ───────────────────────────── */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--surface-in);
-  border: 1px solid var(--border);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 .dot {
-  width: 9px;
-  height: 9px;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #94a3b8;
+  flex-shrink: 0;
+  margin: 0 4px;
 }
 .dot.connected { background: #1A7A4A; box-shadow: 0 0 0 2px rgba(26,122,74,.2); }
 .dot.speaking  { background: var(--amber); box-shadow: 0 0 0 2px rgba(225,160,30,.2); }
@@ -420,27 +436,6 @@ select.input { cursor: pointer; }
 .input:focus { border-color: var(--teal-700); box-shadow: 0 0 0 3px rgba(0,130,130,.15); }
 [data-theme="dark"] .input { background: var(--surface-in); }
 [data-theme="dark"] .input:focus { border-color: var(--teal-400); box-shadow: 0 0 0 3px rgba(80,193,193,.20); }
-
-/* Volume Slider */
-.volume-control-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 38px;
-}
-.volume-slider {
-  flex: 1;
-  accent-color: var(--teal-700);
-  cursor: pointer;
-}
-[data-theme="dark"] .volume-slider { accent-color: var(--teal-400); }
-.volume-val-display {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-  min-width: 40px;
-  text-align: right;
-}
 
 /* Tool Checkbox */
 .tool-toggle-label {
@@ -689,7 +684,14 @@ select.input { cursor: pointer; }
   </a>
   <div class="nav-pipe"></div>
   <a class="nav-brand-text" href="#">Virtual Assistant</a>
+  
   <div class="nav-links-right">
+    <div class="nav-volume-wrapper">
+      <label for="volumeControl" class="nav-volume-label">VOL</label>
+      <input type="range" id="volumeControl" class="nav-volume-slider" min="0" max="100" value="100">
+      <span id="volumeVal" class="nav-volume-val">100%</span>
+    </div>
+    
     <button class="icon-btn" onclick="toggleKeysModal(true)" title="Access Keys">
       <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
       <span>Keys</span>
@@ -718,10 +720,7 @@ select.input { cursor: pointer; }
           <div class="audio-meter-bar"></div>
         </div>
 
-        <div class="status-pill">
-          <span class="dot" id="statusDot"></span>
-          <span id="statusText">Disconnected</span>
-        </div>
+        <span class="dot" id="statusDot" title="Disconnected"></span>
 
         <button id="toggleBtn" class="btn btn-primary" onclick="toggleSession()">
           Start
@@ -775,13 +774,6 @@ select.input { cursor: pointer; }
                 <option value="Orus">Orus (Male - Firm)</option>
                 <option value="Algieba">Algieba (Male - Smooth)</option>
               </select>
-            </div>
-            <div>
-              <label class="field-label">Volume</label>
-              <div class="volume-control-wrapper">
-                <input type="range" id="volumeControl" class="volume-slider" min="0" max="100" value="100">
-                <span id="volumeVal" class="volume-val-display">100%</span>
-              </div>
             </div>
             <div style="grid-column: 1 / -1;">
               <label class="tool-toggle-label">
@@ -842,7 +834,6 @@ let PRESETS = {
     lang: "de-DE",
     voice: "Aoede",
     model: "models/gemini-3.8-live",
-    volume: 100,
     googleSearch: true,
     instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.\n\nThe user is practicing German at the intermediate (B1/B2) level.\nAlways transcribe and interpret the user's speech as German, even if their pronunciation is imperfect or contains an accent. Do not transcribe or interpret user speech as other languages.\n\nRules for your responses:\n- Speak exclusively in natural, conversational German suitable for B1/B2 learners.\n- Engage in an active, supportive conversation.\n- If the user makes a grammatical or vocabulary mistake, briefly and gently correct it, then immediately continue the conversation naturally.\n- Answer questions the user asks and propose relevant follow-up questions to keep the dialogue flowing.\n- Keep your turns reasonably concise so the learner has maximum speaking time.`
   },
@@ -851,7 +842,6 @@ let PRESETS = {
     lang: "fr-FR",
     voice: "Charon",
     model: "models/gemini-3.8-live",
-    volume: 100,
     googleSearch: true,
     instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.\n\nThe user is practicing French at the beginner/elementary (A1/A2) level.\nAlways transcribe and interpret the user's speech as French, even if their pronunciation is accented or incomplete. Do not transcribe or interpret user speech as other languages.\n\nRules for your responses:\n- Speak exclusively in clear, simple French appropriate for A1/A2 level learners (common words, clear syntax, moderate pace).\n- Be very patient and encouraging.\n- If the user makes a mistake, provide a quick, gentle correction, and continue smoothly.\n- Ask simple, clear questions to prompt the learner to respond.\n- Keep responses short to give the learner the floor to practice speaking.`
   }
@@ -1029,14 +1019,6 @@ function applyPersona(personaKey) {
     modelSelect.value = preset.model;
   }
 
-  const vol = preset.volume !== undefined ? preset.volume : 100;
-  volumeControl.value = vol;
-  volumeVal.textContent = `${vol}%`;
-  currentVolume = vol / 100;
-  if (playbackGainNode && playbackCtx) {
-    playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
-  }
-
   googleSearchToggle.checked = preset.googleSearch !== false;
   promptInput.value = preset.instruction || "";
   textInput.placeholder = `Type a message to ${preset.name} or speak...`;
@@ -1051,7 +1033,6 @@ function saveCurrentPersona() {
   PRESETS[key].lang = langSelect.value;
   PRESETS[key].voice = voiceSelect.value;
   PRESETS[key].model = modelSelect.value;
-  PRESETS[key].volume = parseInt(volumeControl.value, 10);
   PRESETS[key].googleSearch = googleSearchToggle.checked;
   PRESETS[key].instruction = promptInput.value;
 
@@ -1073,7 +1054,6 @@ function saveAsNewPersona() {
     lang: langSelect.value,
     voice: voiceSelect.value,
     model: modelSelect.value,
-    volume: parseInt(volumeControl.value, 10),
     googleSearch: googleSearchToggle.checked,
     instruction: promptInput.value
   };
@@ -1232,8 +1212,11 @@ let currentUserMsgEl = null;
 let currentAssistantMsgEl = null;
 
 function setStatus(text, dotClass = "") {
-  document.getElementById("statusText").innerText = text;
-  document.getElementById("statusDot").className = "dot " + dotClass;
+  const dot = document.getElementById("statusDot");
+  if(dot) {
+    dot.className = "dot " + dotClass;
+    dot.title = text;
+  }
 }
 
 function getAssistantSpeakerLabel() {
