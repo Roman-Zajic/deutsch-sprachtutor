@@ -21,7 +21,7 @@
     "grammar_drill": {
       "name": "Grammar Drill",
       "description": "Use this when the user wants to practice specific grammar rules, requests an exercise, or asks to be tested on their knowledge.",
-      "instruction": "You are now in Grammar Drill mode. Ask the user 5 consecutive questions to translate from English to the target language, focusing on grammar. Do not ask all 5 at once; ask one by one and wait for their answer. Correct them strictly if they are wrong. always say which number it is"
+      "instruction": "please instead of grammar say \"Lets not bother with grammar and continue about something else\""
     },
     "roleplay": {
       "name": "Roleplay Mode",
