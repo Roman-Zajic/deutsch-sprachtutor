@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deutsch Sprachtutor</title>
+<title>Virtual Assistant</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -116,7 +116,19 @@ body {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+  gap: 14px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.header-right {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 .card-title {
   font-size: 1.2rem;
@@ -124,6 +136,15 @@ body {
   color: var(--teal-900);
 }
 [data-theme="dark"] .card-title { color: var(--teal-100); }
+
+/* Persona dropdown positioned inline next to title */
+.persona-select {
+  height: 36px;
+  width: auto;
+  min-width: 124px;
+  font-weight: 600;
+  padding: 6px 12px;
+}
 
 /* ── STATUS & AUDIO METER ───────────────────────────── */
 .status-pill {
@@ -232,16 +253,34 @@ body {
   padding-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: 2fr 1.6fr 1.2fr 1.2fr;
+.settings-section {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
-@media (max-width: 860px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 520px) { .settings-grid { grid-template-columns: 1fr; } }
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--teal-700);
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 6px;
+}
+[data-theme="dark"] .settings-section-header { color: var(--teal-400); }
+
+.settings-grid-general {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) { .settings-grid-general { grid-template-columns: 1fr; } }
 
 .field-label {
   font-size: 0.75rem;
@@ -263,6 +302,7 @@ body {
   padding: 8px 12px;
   outline: none;
   width: 100%;
+  height: 38px;
   transition: border-color 130ms, box-shadow 130ms;
 }
 select.input { cursor: pointer; }
@@ -271,6 +311,27 @@ select.input { cursor: pointer; }
 .input:focus { border-color: var(--teal-700); box-shadow: 0 0 0 3px rgba(0,130,130,.15); }
 [data-theme="dark"] .input { background: var(--surface-in); }
 [data-theme="dark"] .input:focus { border-color: var(--teal-400); box-shadow: 0 0 0 3px rgba(80,193,193,.20); }
+
+/* Volume Slider */
+.volume-control-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+}
+.volume-slider {
+  flex: 1;
+  accent-color: var(--teal-700);
+  cursor: pointer;
+}
+[data-theme="dark"] .volume-slider { accent-color: var(--teal-400); }
+.volume-val-display {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 40px;
+  text-align: right;
+}
 
 .textarea {
   font-family: var(--font);
@@ -290,7 +351,7 @@ select.input { cursor: pointer; }
 [data-theme="dark"] .textarea { background: var(--surface-in); }
 [data-theme="dark"] .textarea:focus { border-color: var(--teal-400); box-shadow: 0 0 0 3px rgba(80,193,193,.20); }
 
-/* ── CHAT LOG (PURE SPOKEN SPEECH ONLY) ─────────────── */
+/* ── CHAT LOG ────────────────────────────────────────── */
 .chat-window {
   flex: 1;
   min-height: 460px;
@@ -316,7 +377,7 @@ select.input { cursor: pointer; }
   box-shadow: 0 1px 3px rgba(1,45,44,.06);
 }
 
-/* User Message: Pure TEAL Theme */
+/* User Message */
 .msg-user {
   align-self: flex-end;
   background: var(--teal-900);
@@ -329,12 +390,10 @@ select.input { cursor: pointer; }
   border-color: var(--teal-700);
   color: #FFFFFF;
 }
-.msg-user .msg-speaker {
-  color: var(--teal-100);
-}
+.msg-user .msg-speaker { color: var(--teal-100); }
 
-/* Tutor Message: Pure AMBER Theme */
-.msg-tutor {
+/* Assistant Message */
+.msg-assistant {
   align-self: flex-start;
   background: #FFFCF2;
   border: 1px solid rgba(225, 160, 30, 0.4);
@@ -342,15 +401,13 @@ select.input { cursor: pointer; }
   color: var(--ink);
   border-bottom-left-radius: 2px;
 }
-[data-theme="dark"] .msg-tutor {
+[data-theme="dark"] .msg-assistant {
   background: #191404;
   border-color: rgba(225, 160, 30, 0.35);
   border-left-color: var(--amber);
   color: #FDF3D7;
 }
-.msg-tutor .msg-speaker {
-  color: var(--amber);
-}
+.msg-assistant .msg-speaker { color: var(--amber); }
 
 .msg-speaker {
   display: flex;
@@ -442,7 +499,7 @@ select.input { cursor: pointer; }
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <a class="brand-icon" href="#" aria-label="Deutsch Sprachtutor">
+  <a class="brand-icon" href="#" aria-label="Virtual Assistant">
     <svg width="24" height="17" viewBox="0 0 31 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="0"  y="0"  width="9" height="6" rx="1.5" fill="#95DFDB"/>
       <rect x="11" y="0"  width="9" height="6" rx="1.5" fill="#50C1C1"/>
@@ -456,7 +513,7 @@ select.input { cursor: pointer; }
     </svg>
   </a>
   <div class="nav-pipe"></div>
-  <a class="nav-brand-text" href="#">Deutsch Sprachtutor</a>
+  <a class="nav-brand-text" href="#">Virtual Assistant</a>
   <div class="nav-links-right">
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">Dark</button>
   </div>
@@ -464,11 +521,18 @@ select.input { cursor: pointer; }
 
 <div class="wrap">
 
-  <!-- TOP BAR: TITLE, STATUS & ACTION -->
+  <!-- TOP BAR: TITLE, PERSONA DROPDOWN, STATUS & ACTION -->
   <div class="card">
     <div class="card-header-row">
-      <div class="card-title">Deutsch Sprachtutor</div>
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div class="header-left">
+        <div class="card-title">Virtual Assistant</div>
+        <select id="personaSelect" class="input persona-select" aria-label="Select Assistant">
+          <option value="helga">Helga</option>
+          <option value="jean-paul">Jean-Paul</option>
+        </select>
+      </div>
+
+      <div class="header-right">
         <div class="audio-meter" id="audioMeter" title="Microphone Activity">
           <div class="audio-meter-bar"></div>
           <div class="audio-meter-bar"></div>
@@ -479,11 +543,11 @@ select.input { cursor: pointer; }
 
         <div class="status-pill">
           <span class="dot" id="statusDot"></span>
-          <span id="statusText">Getrennt</span>
+          <span id="statusText">Disconnected</span>
         </div>
 
         <button id="toggleBtn" class="btn btn-primary" onclick="toggleSession()">
-          Gespräch starten
+          Start Conversation
         </button>
       </div>
     </div>
@@ -492,50 +556,48 @@ select.input { cursor: pointer; }
   <!-- COLLAPSIBLE SETTINGS ACCORDION -->
   <div class="accordion">
     <button class="accordion-trigger" id="settingsToggle" aria-expanded="false" onclick="toggleAccordion(this)">
-      <span>Einstellungen</span>
+      <span>Settings</span>
       <svg class="accordion-chevron" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 7 9 12 14 7"/></svg>
     </button>
     <div class="accordion-body">
       <div class="accordion-body-inner">
-        <div class="settings-grid">
-          <div>
-            <label class="field-label">Gemini API Key</label>
-            <input type="password" id="apiKey" class="input" placeholder="API Key eingeben...">
-          </div>
-          <div>
-            <label class="field-label">Modell</label>
-            <select id="modelId" class="input">
-              <option value="models/gemini-3.8-live" selected>models/gemini-3.8-live</option>
-              <option value="models/gemini-2.5-flash-native-audio-latest">models/gemini-2.5-flash-native-audio-latest</option>
-              <option value="models/gemini-2.0-flash">models/gemini-2.0-flash</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Sprache (Eingabe)</label>
-            <select id="langSelect" class="input">
-              <option value="de-DE" selected>Deutsch (de-DE)</option>
-              <option value="de-AT">Deutsch (Österreich)</option>
-              <option value="de-CH">Deutsch (Schweiz)</option>
-              <option value="en-US">Englisch (en-US)</option>
-              <option value="auto">Automatisch erkennen</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Stimme</label>
-            <select id="voiceSelect" class="input">
-              <option value="Puck" selected>Puck</option>
-              <option value="Charon">Charon</option>
-              <option value="Kore">Kore</option>
-              <option value="Fenrir">Fenrir</option>
-              <option value="Aoede">Aoede</option>
-            </select>
+
+        <!-- General Settings Section -->
+        <div class="settings-section">
+          <div class="settings-section-header">General Settings</div>
+          <div class="settings-grid-general">
+            <div>
+              <label class="field-label">Gemini API Key</label>
+              <input type="password" id="apiKey" class="input" placeholder="Enter API key...">
+            </div>
+            <div>
+              <label class="field-label">Volume</label>
+              <div class="volume-control-wrapper">
+                <input type="range" id="volumeControl" class="volume-slider" min="0" max="100" value="100">
+                <span id="volumeVal" class="volume-val-display">100%</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label class="field-label">Metaprompt (System Instruction)</label>
-          <textarea id="systemPrompt" class="textarea"></textarea>
+        <!-- Dedicated Language & Metaprompt Section -->
+        <div class="settings-section">
+          <div class="settings-section-header">Language & Metaprompt Configuration</div>
+          <div>
+            <label class="field-label">Input Language</label>
+            <select id="langSelect" class="input" style="max-width: 320px;">
+              <option value="de-DE">German (de-DE)</option>
+              <option value="fr-FR">French (fr-FR)</option>
+              <option value="en-US">English (en-US)</option>
+              <option value="pl-PL">Polish (pl-PL)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Metaprompt (System Instruction)</label>
+            <textarea id="systemPrompt" class="textarea"></textarea>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -547,25 +609,48 @@ select.input { cursor: pointer; }
 
 <!-- FOOTER -->
 <footer class="footer">
-  <span><strong>Deutsch Sprachtutor</strong></span>
+  <span><strong>Virtual Assistant</strong></span>
   <span class="footer-dot">·</span>
   <span>Roman Zajic</span>
 </footer>
 
 <script>
-/* ── DEFAULT SYSTEM INSTRUCTION ─────────────────────── */
-const DEFAULT_INSTRUCTION = `You are a friendly German language tutor.
+/* ── CONSTANTS & PRESETS ────────────────────────────── */
+const DEFAULT_MODEL = "models/gemini-3.8-live";
+const DEFAULT_VOICE = "Aoede";
 
-The user is speaking German (de-DE).
-Always transcribe and interpret the user's speech as German, even if their pronunciation is imperfect or contains an accent. Do not transcribe or interpret user speech as Arabic or other languages.
+const PRESETS = {
+  helga: {
+    name: "Helga",
+    lang: "de-DE",
+    instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
 
-Speak exclusively in German.
-Use natural A2/B1 German.
-Have a real conversation with the user.
-Answer every question the user asks.
-Do not stop the conversation after one answer.
-If the user makes a grammatical mistake, briefly correct it and then continue the conversation naturally.
-Keep answers reasonably concise so the user has plenty of opportunity to speak.`;
+The user is practicing German at the intermediate (B1/B2) level.
+Always transcribe and interpret the user's speech as German, even if their pronunciation is imperfect or contains an accent. Do not transcribe or interpret user speech as other languages.
+
+Rules for your responses:
+- Speak exclusively in natural, conversational German suitable for B1/B2 learners.
+- Engage in an active, supportive conversation.
+- If the user makes a grammatical or vocabulary mistake, briefly and gently correct it, then immediately continue the conversation naturally.
+- Answer questions the user asks and propose relevant follow-up questions to keep the dialogue flowing.
+- Keep your turns reasonably concise so the learner has maximum speaking time.`
+  },
+  "jean-paul": {
+    name: "Jean-Paul",
+    lang: "fr-FR",
+    instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
+
+The user is practicing French at the beginner/elementary (A1/A2) level.
+Always transcribe and interpret the user's speech as French, even if their pronunciation is accented or incomplete. Do not transcribe or interpret user speech as other languages.
+
+Rules for your responses:
+- Speak exclusively in clear, simple French appropriate for A1/A2 level learners (common words, clear syntax, moderate pace).
+- Be very patient and encouraging.
+- If the user makes a mistake, provide a quick, gentle correction, and continue smoothly.
+- Ask simple, clear questions to prompt the learner to respond.
+- Keep responses short to give the learner the floor to practice speaking.`
+  }
+};
 
 /* ── THEME SWITCHER ─────────────────────────────────── */
 function toggleTheme() {
@@ -574,9 +659,9 @@ function toggleTheme() {
   const newTheme = isDark ? 'light' : 'dark';
   html.setAttribute('data-theme', newTheme);
   document.getElementById('theme-btn').textContent = isDark ? 'Dark' : 'Light';
-  localStorage.setItem('dt_theme', newTheme);
+  localStorage.setItem('va_theme', newTheme);
 }
-const savedTheme = localStorage.getItem('dt_theme');
+const savedTheme = localStorage.getItem('va_theme');
 if (savedTheme) {
   document.documentElement.setAttribute('data-theme', savedTheme);
   document.getElementById('theme-btn').textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
@@ -589,31 +674,70 @@ function toggleAccordion(btn) {
   btn.nextElementSibling.classList.toggle('open', !expanded);
 }
 
-/* ── PERSISTENCE (KEY, MODEL, LANG & METAPROMPT) ────── */
+/* ── SETTINGS PERSISTENCE & PERSONA HANDLING ────────── */
 const apiKeyInput = document.getElementById("apiKey");
-apiKeyInput.value = localStorage.getItem("gemini_live_api_key") || "";
+apiKeyInput.value = localStorage.getItem("va_api_key") || "";
 apiKeyInput.addEventListener("change", () => {
-  localStorage.setItem("gemini_live_api_key", apiKeyInput.value.trim());
+  localStorage.setItem("va_api_key", apiKeyInput.value.trim());
 });
 
-const modelSelect = document.getElementById("modelId");
-const savedModel = localStorage.getItem("gemini_live_model");
-if (savedModel) modelSelect.value = savedModel;
-modelSelect.addEventListener("change", () => {
-  localStorage.setItem("gemini_live_model", modelSelect.value);
-});
-
+const personaSelect = document.getElementById("personaSelect");
 const langSelect = document.getElementById("langSelect");
-const savedLang = localStorage.getItem("gemini_live_lang");
-if (savedLang) langSelect.value = savedLang;
-langSelect.addEventListener("change", () => {
-  localStorage.setItem("gemini_live_lang", langSelect.value);
+const promptInput = document.getElementById("systemPrompt");
+
+function applyPersona(personaKey) {
+  const preset = PRESETS[personaKey];
+  if (!preset) return;
+
+  personaSelect.value = personaKey;
+  langSelect.value = preset.lang;
+  promptInput.value = preset.instruction;
+
+  localStorage.setItem("va_persona", personaKey);
+  localStorage.setItem("va_lang", preset.lang);
+  localStorage.setItem("va_prompt", preset.instruction);
+}
+
+// Initialize active persona
+let savedPersona = localStorage.getItem("va_persona");
+if (!PRESETS[savedPersona]) {
+  savedPersona = "helga";
+}
+personaSelect.value = savedPersona;
+
+langSelect.value = localStorage.getItem("va_lang") || PRESETS[savedPersona].lang;
+promptInput.value = localStorage.getItem("va_prompt") || PRESETS[savedPersona].instruction;
+
+personaSelect.addEventListener("change", (e) => {
+  applyPersona(e.target.value);
 });
 
-const promptInput = document.getElementById("systemPrompt");
-promptInput.value = localStorage.getItem("gemini_live_prompt") || DEFAULT_INSTRUCTION;
-promptInput.addEventListener("change", () => {
-  localStorage.setItem("gemini_live_prompt", promptInput.value);
+langSelect.addEventListener("change", () => {
+  localStorage.setItem("va_lang", langSelect.value);
+});
+
+promptInput.addEventListener("input", () => {
+  localStorage.setItem("va_prompt", promptInput.value);
+});
+
+/* ── VOLUME CONTROL ─────────────────────────────────── */
+const volumeControl = document.getElementById("volumeControl");
+const volumeVal = document.getElementById("volumeVal");
+let playbackGainNode = null;
+let currentVolume = parseFloat(localStorage.getItem("va_volume") ?? "100") / 100;
+if (isNaN(currentVolume)) currentVolume = 1;
+
+volumeControl.value = Math.round(currentVolume * 100);
+volumeVal.textContent = `${volumeControl.value}%`;
+
+volumeControl.addEventListener("input", (e) => {
+  const val = parseInt(e.target.value, 10);
+  volumeVal.textContent = `${val}%`;
+  currentVolume = val / 100;
+  localStorage.setItem("va_volume", val);
+  if (playbackGainNode && playbackCtx) {
+    playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
+  }
 });
 
 /* ── TOASTER ────────────────────────────────────────── */
@@ -652,22 +776,27 @@ let activeSources = [];
 
 let isConnected = false;
 let isSetupComplete = false;
-let isGeminiSpeaking = false;
+let isAssistantSpeaking = false;
 
 // Pointers to the active streaming speech bubbles
 let currentUserMsgEl = null;
-let currentTutorMsgEl = null;
+let currentAssistantMsgEl = null;
 
 function setStatus(text, dotClass = "") {
   document.getElementById("statusText").innerText = text;
   document.getElementById("statusDot").className = "dot " + dotClass;
 }
 
+function getAssistantSpeakerLabel() {
+  const currentP = personaSelect.value;
+  return PRESETS[currentP] ? PRESETS[currentP].name : 'Assistant';
+}
+
 function appendMessage(sender, text = "") {
   const chat = document.getElementById("chat");
   const msg = document.createElement("div");
   msg.className = `msg msg-${sender}`;
-  const speakerLabel = sender === 'user' ? 'Du' : 'Tutor';
+  const speakerLabel = sender === 'user' ? 'You' : getAssistantSpeakerLabel();
   msg.innerHTML = `<div class="msg-speaker">${speakerLabel}</div><div class="content">${text}</div>`;
   chat.appendChild(msg);
   chat.scrollTop = chat.scrollHeight;
@@ -685,13 +814,12 @@ async function toggleSession() {
 
 async function startSession() {
   const key = apiKeyInput.value.trim();
-  const model = modelSelect.value.trim();
-  const voice = document.getElementById("voiceSelect").value;
   const lang = langSelect.value;
-  const instruction = promptInput.value.trim() || DEFAULT_INSTRUCTION;
+  const currentP = personaSelect.value;
+  const instruction = promptInput.value.trim() || (PRESETS[currentP] ? PRESETS[currentP].instruction : "");
 
   if (!key) {
-    toast('warning', 'API-Schlüssel fehlt', 'Bitte trage in den Einstellungen deinen Gemini API Key ein.');
+    toast('warning', 'API Key Missing', 'Please enter your Gemini API key in the settings panel.');
     const trigger = document.getElementById("settingsToggle");
     if (trigger.getAttribute("aria-expanded") !== "true") {
       toggleAccordion(trigger);
@@ -700,42 +828,40 @@ async function startSession() {
     return;
   }
 
-  setStatus("Mikrofon starten...", "");
+  setStatus("Starting microphone...", "");
   const toggleBtn = document.getElementById("toggleBtn");
-  toggleBtn.innerText = "Verbinden...";
+  toggleBtn.innerText = "Connecting...";
   toggleBtn.disabled = true;
+  personaSelect.disabled = true;
 
   try {
     await initMicrophone();
   } catch (err) {
-    toast('error', 'Mikrofonfehler', err.message);
+    toast('error', 'Microphone Error', err.message);
     stopSession();
     return;
   }
 
-  setStatus("Verbinden...", "");
+  setStatus("Connecting...", "");
 
   const endpoint = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${key}`;
   ws = new WebSocket(endpoint);
 
   ws.onopen = () => {
-    // Configure input audio transcription with explicit language pinning (BCP-47)
-    const inputAudioTranscriptionConfig = lang === "auto" 
-      ? {} 
-      : { languageCodes: [lang] };
-
     const setupMessage = {
       setup: {
-        model: model,
+        model: DEFAULT_MODEL,
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: voice }
+              prebuiltVoiceConfig: { voiceName: DEFAULT_VOICE }
             }
           }
         },
-        inputAudioTranscription: inputAudioTranscriptionConfig,
+        inputAudioTranscription: {
+          languageCodes: [lang]
+        },
         outputAudioTranscription: {},
         systemInstruction: {
           parts: [{ text: instruction }]
@@ -746,9 +872,9 @@ async function startSession() {
     ws.send(JSON.stringify(setupMessage));
     isConnected = true;
     toggleBtn.disabled = false;
-    toggleBtn.innerText = "Gespräch beenden";
+    toggleBtn.innerText = "End Conversation";
     toggleBtn.className = "btn btn-danger";
-    setStatus("Warten auf Server...", "");
+    setStatus("Waiting for server...", "");
   };
 
   ws.onmessage = async (event) => {
@@ -765,8 +891,8 @@ async function startSession() {
 
     if (msg.setupComplete) {
       isSetupComplete = true;
-      setStatus("Bereit! Sprich Deutsch", "connected");
-      toast('success', 'Verbunden', 'Das Gespräch ist aktiv.');
+      setStatus("Ready! Speak now", "connected");
+      toast('success', 'Connected', 'Conversation session is active.');
       return;
     }
 
@@ -784,11 +910,11 @@ async function startSession() {
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 2. AUDIO STREAM (Strictly ignores background thoughts / part.thought)
+    // 2. AUDIO STREAM
     if (serverContent.modelTurn?.parts) {
-      isGeminiSpeaking = true;
+      isAssistantSpeaking = true;
       currentUserMsgEl = null;
-      setStatus("Tutor spricht...", "speaking");
+      setStatus(`${getAssistantSpeakerLabel()} is speaking...`, "speaking");
 
       for (const part of serverContent.modelTurn.parts) {
         if (part.inlineData?.data) {
@@ -797,14 +923,14 @@ async function startSession() {
       }
     }
 
-    // 3. PURE TUTOR SPOKEN WORDS (Output transcription of generated speech)
-    const tutorText = serverContent.outputTranscription?.text;
-    if (tutorText) {
+    // 3. PURE ASSISTANT SPOKEN WORDS
+    const assistantText = serverContent.outputTranscription?.text;
+    if (assistantText) {
       currentUserMsgEl = null;
-      if (!currentTutorMsgEl) {
-        currentTutorMsgEl = appendMessage("tutor");
+      if (!currentAssistantMsgEl) {
+        currentAssistantMsgEl = appendMessage("assistant");
       }
-      currentTutorMsgEl.textContent += tutorText;
+      currentAssistantMsgEl.textContent += assistantText;
       const chat = document.getElementById("chat");
       chat.scrollTop = chat.scrollHeight;
     }
@@ -812,12 +938,12 @@ async function startSession() {
     // Barge-in
     if (serverContent.interrupted) {
       stopAudioPlayback();
-      currentTutorMsgEl = null;
+      currentAssistantMsgEl = null;
     }
 
     // Turn complete
     if (serverContent.turnComplete) {
-      currentTutorMsgEl = null;
+      currentAssistantMsgEl = null;
     }
   };
 
@@ -828,7 +954,7 @@ async function startSession() {
   ws.onclose = (event) => {
     console.warn("WebSocket closed:", event.code, event.reason);
     if (event.code !== 1000) {
-      toast('error', `Getrennt (${event.code})`, event.reason || 'Überprüfe API-Schlüssel oder Modell.');
+      toast('error', `Disconnected (${event.code})`, event.reason || 'Check your API key and connection.');
     }
     stopSession();
   };
@@ -866,7 +992,7 @@ async function initMicrophone() {
       bar.style.height = (idx < level) ? `${6 + idx * 2}px` : `4px`;
     });
 
-    if (!isConnected || !isSetupComplete || isGeminiSpeaking || !ws || ws.readyState !== WebSocket.OPEN) {
+    if (!isConnected || !isSetupComplete || isAssistantSpeaking || !ws || ws.readyState !== WebSocket.OPEN) {
       return;
     }
 
@@ -894,10 +1020,13 @@ async function initMicrophone() {
   mute.connect(audioContext.destination);
 }
 
-/* ── AUDIO PLAYBACK (24kHz PCM) ─────────────────────── */
+/* ── AUDIO PLAYBACK (24kHz PCM WITH VOLUME GAIN) ────── */
 function playAudioChunk(base64PCM) {
   if (!playbackCtx) {
     playbackCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+    playbackGainNode = playbackCtx.createGain();
+    playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
+    playbackGainNode.connect(playbackCtx.destination);
   }
   if (playbackCtx.state === "suspended") {
     playbackCtx.resume();
@@ -918,7 +1047,7 @@ function playAudioChunk(base64PCM) {
 
   const source = playbackCtx.createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(playbackCtx.destination);
+  source.connect(playbackGainNode);
 
   const now = playbackCtx.currentTime;
   if (nextPlayTime < now) nextPlayTime = now;
@@ -930,8 +1059,8 @@ function playAudioChunk(base64PCM) {
   source.onended = () => {
     activeSources = activeSources.filter(s => s !== source);
     if (activeSources.length === 0 && nextPlayTime <= playbackCtx.currentTime + 0.05) {
-      isGeminiSpeaking = false;
-      setStatus("Bereit! Sprich Deutsch", "connected");
+      isAssistantSpeaking = false;
+      setStatus("Ready! Speak now", "connected");
     }
   };
 }
@@ -940,15 +1069,15 @@ function stopAudioPlayback() {
   activeSources.forEach(s => { try { s.stop(); } catch(e){} });
   activeSources = [];
   if (playbackCtx) nextPlayTime = playbackCtx.currentTime;
-  isGeminiSpeaking = false;
+  isAssistantSpeaking = false;
 }
 
 function stopSession() {
   isConnected = false;
   isSetupComplete = false;
-  isGeminiSpeaking = false;
+  isAssistantSpeaking = false;
   currentUserMsgEl = null;
-  currentTutorMsgEl = null;
+  currentAssistantMsgEl = null;
 
   stopAudioPlayback();
 
@@ -978,12 +1107,13 @@ function stopSession() {
 
   const toggleBtn = document.getElementById("toggleBtn");
   toggleBtn.disabled = false;
-  toggleBtn.innerText = "Gespräch starten";
+  toggleBtn.innerText = "Start Conversation";
   toggleBtn.className = "btn btn-primary";
-  setStatus("Getrennt", "");
+  personaSelect.disabled = false;
+  setStatus("Disconnected", "");
 }
 
-/* ── CONVERSIONS ────────────────────────────────────── */
+/* ── AUDIO CONVERSIONS ──────────────────────────────── */
 function downsample(buffer, fromRate, toRate) {
   if (fromRate === toRate) return buffer;
   const ratio = fromRate / toRate;
