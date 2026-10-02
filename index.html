@@ -617,6 +617,8 @@ select.input { cursor: pointer; }
             <div>
               <label class="field-label">Assistant Voice</label>
               <select id="voiceSelect" class="input">
+                <option value="Flare">Flare (Female)</option>
+                <option value="Glow">Glow (Male)</option>
                 <option value="Charon">Charon (Male)</option>
                 <option value="Puck">Puck (Male)</option>
                 <option value="Fenrir">Fenrir (Male)</option>
@@ -650,13 +652,13 @@ select.input { cursor: pointer; }
 <script>
 /* ── CONSTANTS & PRESETS ────────────────────────────── */
 const DEFAULT_MODEL = "models/gemini-3.8-live";
-const DEFAULT_VOICE = "Aoede";
+const DEFAULT_VOICE = "Flare";
 
 const PRESETS = {
   helga: {
     name: "Helga",
     lang: "de-DE",
-    voice: "Aoede", // Female voice
+    voice: "Flare", // Female voice
     instruction: `You are Helga, an encouraging, friendly, and structured German language teacher.
 
 The user is practicing German at the intermediate (B1/B2) level.
@@ -672,7 +674,7 @@ Rules for your responses:
   "jean-paul": {
     name: "Jean-Paul",
     lang: "fr-FR",
-    voice: "Charon", // Male voice
+    voice: "Glow", // Male voice
     instruction: `You are Jean-Paul, a warm, patient, and articulate French language teacher.
 
 The user is practicing French at the beginner/elementary (A1/A2) level.
