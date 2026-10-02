@@ -40,7 +40,12 @@
   --shadow-md:    0 4px 14px rgba(0,0,0,.50);
 }
 
-html { font-size: 16px; scroll-behavior: smooth; }
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
 body {
   font-family: var(--font);
   font-size: 0.9375rem;
@@ -51,7 +56,9 @@ body {
   transition: background 200ms, color 200ms;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
 }
 
 /* ── NAVBAR ─────────────────────────────────────────── */
@@ -65,6 +72,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  flex-shrink: 0;
 }
 .brand-icon { display: flex; align-items: center; text-decoration: none; }
 .nav-pipe { width: 1px; height: 16px; background: rgba(149,223,219,.30); margin: 0 12px; }
@@ -96,11 +104,12 @@ body {
   width: 100%;
   max-width: var(--wrap);
   margin-inline: auto;
-  padding: 20px 20px 32px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 14px;
+  min-height: 0;
+  gap: 12px;
 }
 
 /* ── TOP CONTROL BAR ────────────────────────────────── */
@@ -110,6 +119,7 @@ body {
   border-radius: var(--r);
   padding: 14px 20px;
   box-shadow: var(--shadow);
+  flex-shrink: 0;
 }
 .card-header-row {
   display: flex;
@@ -236,6 +246,7 @@ body {
   overflow: hidden;
   background: var(--surface-card);
   box-shadow: var(--shadow);
+  flex-shrink: 0;
 }
 .accordion-trigger {
   display: flex;
@@ -400,16 +411,16 @@ select.input { cursor: pointer; }
   margin-top: 6px;
 }
 
-/* ── CHAT LOG ────────────────────────────────────────── */
+/* ── CHAT LOG & INPUT BAR (STABLE FULL-HEIGHT FLEX) ─── */
 .chat-window {
   flex: 1;
-  min-height: 460px;
-  max-height: calc(100vh - 270px);
+  min-height: 220px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 20px;
+  padding: 16px 20px;
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: var(--r);
@@ -465,6 +476,23 @@ select.input { cursor: pointer; }
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-bottom: 4px;
+}
+
+/* Interactive Chat Input Bar */
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.chat-input-row .input {
+  flex: 1;
+  height: 42px;
+  padding: 10px 14px;
+}
+.chat-input-row .btn {
+  height: 42px;
+  padding: 0 22px;
 }
 
 /* ── TOASTER ─────────────────────────────────────────── */
@@ -529,12 +557,13 @@ select.input { cursor: pointer; }
   max-width: var(--wrap);
   margin-inline: auto;
   border-top: 1px solid var(--border);
-  padding: 16px 20px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8125rem;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 .footer strong { color: var(--text); font-weight: 600; }
 .footer-dot { margin: 0 10px; color: var(--border); }
@@ -689,8 +718,14 @@ select.input { cursor: pointer; }
     </div>
   </div>
 
-  <!-- CHAT WINDOW (Pure spoken speech only) -->
+  <!-- CHAT WINDOW (STABLE FULL-HEIGHT FLEX) -->
   <div class="chat-window" id="chat"></div>
+
+  <!-- CHAT INPUT BAR -->
+  <div class="chat-input-row">
+    <input type="text" id="textInput" class="input" placeholder="Type a message or speak..." autocomplete="off">
+    <button id="sendBtn" class="btn btn-primary" onclick="handleSendText()">Send</button>
+  </div>
 
 </div>
 
@@ -714,7 +749,6 @@ const VALID_GEMINI_VOICES = [
   "Charon", "Puck", "Fenrir", "Orus", "Algieba"
 ];
 
-// Fallback presets if GitHub fetch fails or file doesn't exist
 let PRESETS = {
   helga: {
     name: "Helga",
@@ -747,6 +781,8 @@ const promptInput = document.getElementById("systemPrompt");
 const volumeControl = document.getElementById("volumeControl");
 const volumeVal = document.getElementById("volumeVal");
 const googleSearchToggle = document.getElementById("googleSearchToggle");
+const textInput = document.getElementById("textInput");
+const sendBtn = document.getElementById("sendBtn");
 
 /* ── THEME SWITCHER ─────────────────────────────────── */
 function toggleTheme() {
@@ -855,7 +891,7 @@ async function savePersonasToGitHub() {
     }
 
     const data = await res.json();
-    githubFileSha = data.content.sha; // Update SHA for future saves
+    githubFileSha = data.content.sha;
     toast('success', 'Saved', 'Persona configuration committed to GitHub.');
   } catch (err) {
     console.error(err);
@@ -909,8 +945,9 @@ function applyPersona(personaKey) {
     playbackGainNode.gain.setValueAtTime(currentVolume, playbackCtx.currentTime);
   }
 
-  googleSearchToggle.checked = preset.googleSearch !== false; // default to true
+  googleSearchToggle.checked = preset.googleSearch !== false;
   promptInput.value = preset.instruction || "";
+  textInput.placeholder = `Type a message to ${preset.name} or speak...`;
 
   localStorage.setItem("va_persona", personaKey);
 }
@@ -968,7 +1005,6 @@ apiKeyInput.addEventListener("change", () => {
 ghTokenInput.addEventListener("change", () => localStorage.setItem("va_gh_token", ghTokenInput.value.trim()));
 personaSelect.addEventListener("change", (e) => applyPersona(e.target.value));
 
-// Update local volume variable instantly when sliding (does not auto-save to github)
 volumeControl.addEventListener("input", (e) => {
   const val = parseInt(e.target.value, 10);
   volumeVal.textContent = `${val}%`;
@@ -978,14 +1014,18 @@ volumeControl.addEventListener("input", (e) => {
   }
 });
 
+textInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    handleSendText();
+  }
+});
+
 // Boot Sequence
 window.addEventListener('DOMContentLoaded', async () => {
-  // Auto-query live models on load if API key is present
   if (apiKeyInput.value.trim()) {
     detectAvailableLiveModels(apiKeyInput.value.trim(), true);
   }
-  
-  // Auto-pull configuration from GitHub
   await fetchPersonasFromGitHub();
 });
 
@@ -1025,7 +1065,6 @@ async function detectAvailableLiveModels(key, silent = false) {
         modelSelect.appendChild(fallbackOpt);
       }
 
-      // Ensure the active persona's model stays selected if possible
       if (![...modelSelect.options].some(o => o.value === currentSelected)) {
         const opt = document.createElement("option");
         opt.value = currentSelected;
@@ -1104,6 +1143,54 @@ function appendMessage(sender, text = "") {
   return msg.querySelector(".content");
 }
 
+/* ── SEND TYPED TEXT ─────────────────────────────────── */
+async function handleSendText() {
+  const text = textInput.value.trim();
+  if (!text) return;
+
+  if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) {
+    await startSession();
+    let waited = 0;
+    while (!isSetupComplete && waited < 5000 && isConnected) {
+      await new Promise(r => setTimeout(r, 100));
+      waited += 100;
+    }
+    if (!isSetupComplete || !ws || ws.readyState !== WebSocket.OPEN) {
+      toast('error', 'Connection Error', 'Could not establish connection to send message.');
+      return;
+    }
+  }
+
+  stopAudioPlayback();
+
+  currentUserMsgEl = null;
+  currentAssistantMsgEl = null;
+
+  appendMessage("user", text);
+
+  const payload = {
+    clientContent: {
+      turns: [
+        {
+          role: "user",
+          parts: [{ text: text }]
+        }
+      ],
+      turnComplete: true
+    }
+  };
+
+  try {
+    ws.send(JSON.stringify(payload));
+  } catch (err) {
+    toast('error', 'Send Error', err.message);
+    return;
+  }
+
+  textInput.value = "";
+  textInput.focus();
+}
+
 function checkIsQuotaError(reason = "", code = 0, status = "") {
   const text = (String(reason) + " " + String(code) + " " + String(status)).toLowerCase();
   return (
@@ -1168,7 +1255,7 @@ async function startSession() {
   }
 
   isFallingBack = false;
-  setStatus("Starting microphone...", "");
+  setStatus("Connecting...", "");
   const toggleBtn = document.getElementById("toggleBtn");
   toggleBtn.innerText = "Connecting...";
   toggleBtn.disabled = true;
@@ -1178,9 +1265,8 @@ async function startSession() {
   try {
     await initMicrophone();
   } catch (err) {
-    toast('error', 'Microphone Error', err.message);
-    stopSession();
-    return;
+    console.warn("Microphone not available, using text-only:", err);
+    toast('info', 'Text-only Mode', 'Microphone not accessible. You can chat by typing.');
   }
 
   await connectWebSocket(model);
@@ -1207,6 +1293,15 @@ async function connectWebSocket(activeModel) {
     const tools = [];
     if (enableSearch) tools.push({ googleSearch: {} });
 
+    // Derive language codes (e.g. ["de-DE", "de"]) to lock STT recognition to this language
+    const langCodes = [lang];
+    if (lang.includes('-')) {
+      const baseLang = lang.split('-')[0];
+      if (!langCodes.includes(baseLang)) {
+        langCodes.push(baseLang);
+      }
+    }
+
     const setupMessage = {
       setup: {
         model: activeModel,
@@ -1219,7 +1314,7 @@ async function connectWebSocket(activeModel) {
           }
         },
         ...(tools.length > 0 ? { tools } : {}),
-        inputAudioTranscription: { languageCodes: [lang] },
+        inputAudioTranscription: { languageCodes: langCodes },
         outputAudioTranscription: {},
         systemInstruction: { parts: [{ text: instruction }] }
       }
@@ -1259,7 +1354,7 @@ async function connectWebSocket(activeModel) {
 
     if (msg.setupComplete) {
       isSetupComplete = true;
-      setStatus("Ready! Speak now", "connected");
+      setStatus("Ready! Speak or type", "connected");
       if (isFallingBack) {
         toast('success', 'Fallback Active', 'Connected to Gemini 2.5 Flash Native Audio.');
         isFallingBack = false;
@@ -1272,6 +1367,7 @@ async function connectWebSocket(activeModel) {
     const serverContent = msg.serverContent;
     if (!serverContent) return;
 
+    // Spoken microphone transcription
     const userText = serverContent.inputTranscription?.text;
     if (userText && userText.trim()) {
       if (!currentUserMsgEl) currentUserMsgEl = appendMessage("user");
@@ -1280,6 +1376,7 @@ async function connectWebSocket(activeModel) {
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // Audio stream from assistant
     if (serverContent.modelTurn?.parts) {
       isAssistantSpeaking = true;
       currentUserMsgEl = null;
@@ -1292,6 +1389,7 @@ async function connectWebSocket(activeModel) {
       }
     }
 
+    // Spoken response transcript
     const assistantText = serverContent.outputTranscription?.text;
     if (assistantText) {
       currentUserMsgEl = null;
@@ -1413,7 +1511,7 @@ function playAudioChunk(base64PCM) {
     activeSources = activeSources.filter(s => s !== source);
     if (activeSources.length === 0 && nextPlayTime <= playbackCtx.currentTime + 0.05) {
       isAssistantSpeaking = false;
-      setStatus("Ready! Speak now", "connected");
+      setStatus("Ready! Speak or type", "connected");
     }
   };
 }
