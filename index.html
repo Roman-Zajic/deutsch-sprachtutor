@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Virtual Assistant</title>
+<title>Assistant</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -27,17 +27,6 @@
   --r:            8px;
   --nav-h:        48px;
   --wrap:         1040px;
-}
-
-[data-theme="dark"] {
-  --text:         #95DFDB;
-  --text-muted:   #50C1C1;
-  --surface-page: #012D2C;
-  --surface-card: #032F2E;
-  --surface-in:   #021E1E;
-  --border:       #0A5050;
-  --shadow:       0 1px 4px rgba(0,0,0,.40);
-  --shadow-md:    0 4px 14px rgba(0,0,0,.50);
 }
 
 html {
@@ -131,20 +120,6 @@ body {
 .icon-btn:hover { background: rgba(149,223,219,.22); border-color: rgba(149,223,219,.40); color: var(--teal-100); }
 .icon-btn svg { width: 14px; height: 14px; fill: currentColor; }
 
-.theme-btn {
-  font-family: var(--font);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: rgba(149,223,219,.75);
-  background: rgba(149,223,219,.12);
-  border: 1px solid rgba(149,223,219,.22);
-  border-radius: 4px;
-  padding: 5px 11px;
-  cursor: pointer;
-  transition: 130ms;
-}
-.theme-btn:hover { background: rgba(149,223,219,.22); border-color: rgba(149,223,219,.40); color: var(--teal-100); }
-
 /* ── MODAL POPUP FOR KEYS ───────────────────────────── */
 .modal-overlay {
   position: fixed;
@@ -188,7 +163,6 @@ body {
   font-weight: 700;
   color: var(--teal-900);
 }
-[data-theme="dark"] .modal-header { color: var(--teal-100); }
 .modal-close {
   background: none;
   border: none;
@@ -318,13 +292,9 @@ body {
 .btn:active { opacity: .88; }
 .btn-primary { background: var(--teal-900); color: #fff; border-color: var(--teal-900); }
 .btn-primary:hover { background: var(--teal-700); border-color: var(--teal-700); }
-[data-theme="dark"] .btn-primary { background: var(--teal-400); color: var(--ink); border-color: var(--teal-400); }
-[data-theme="dark"] .btn-primary:hover { background: var(--teal-100); border-color: var(--teal-100); }
 
 .btn-secondary { background: transparent; color: var(--teal-900); border-color: var(--teal-900); }
 .btn-secondary:hover { background: rgba(0,90,90,.05); }
-[data-theme="dark"] .btn-secondary { color: var(--teal-400); border-color: var(--teal-400); }
-[data-theme="dark"] .btn-secondary:hover { background: rgba(80,193,193,.1); }
 
 .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
 .btn-danger:hover { background: #A01830; }
@@ -398,7 +368,6 @@ body {
   border-bottom: 1px dashed var(--border);
   padding-bottom: 6px;
 }
-[data-theme="dark"] .settings-section-header { color: var(--teal-400); }
 
 .settings-grid-2col {
   display: grid;
@@ -434,8 +403,6 @@ select.input { cursor: pointer; }
 .input::placeholder { color: #7A9E9E; }
 .input:hover { border-color: var(--teal-700); }
 .input:focus { border-color: var(--teal-700); box-shadow: 0 0 0 3px rgba(0,130,130,.15); }
-[data-theme="dark"] .input { background: var(--surface-in); }
-[data-theme="dark"] .input:focus { border-color: var(--teal-400); box-shadow: 0 0 0 3px rgba(80,193,193,.20); }
 
 /* Tool Checkbox */
 .tool-toggle-label {
@@ -454,9 +421,6 @@ select.input { cursor: pointer; }
   accent-color: var(--teal-700);
   cursor: pointer;
 }
-[data-theme="dark"] .tool-toggle-label input[type="checkbox"] {
-  accent-color: var(--teal-400);
-}
 
 .textarea {
   font-family: var(--font);
@@ -473,8 +437,6 @@ select.input { cursor: pointer; }
   line-height: 1.55;
 }
 .textarea:focus { border-color: var(--teal-700); box-shadow: 0 0 0 3px rgba(0,130,130,.15); }
-[data-theme="dark"] .textarea { background: var(--surface-in); }
-[data-theme="dark"] .textarea:focus { border-color: var(--teal-400); box-shadow: 0 0 0 3px rgba(80,193,193,.20); }
 
 .persona-actions {
   display: flex;
@@ -515,11 +477,6 @@ select.input { cursor: pointer; }
   color: #FFFFFF;
   border-bottom-right-radius: 2px;
 }
-[data-theme="dark"] .msg-user {
-  background: #023838;
-  border-color: var(--teal-700);
-  color: #FFFFFF;
-}
 .msg-user .msg-speaker { color: var(--teal-100); }
 
 .msg-assistant {
@@ -529,12 +486,6 @@ select.input { cursor: pointer; }
   border-left: 4px solid var(--amber);
   color: var(--ink);
   border-bottom-left-radius: 2px;
-}
-[data-theme="dark"] .msg-assistant {
-  background: #191404;
-  border-color: rgba(225, 160, 30, 0.35);
-  border-left-color: var(--amber);
-  color: #FDF3D7;
 }
 .msg-assistant .msg-speaker { color: var(--amber); }
 
@@ -669,7 +620,7 @@ select.input { cursor: pointer; }
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <a class="brand-icon" href="#" aria-label="Virtual Assistant">
+  <a class="brand-icon" href="#" aria-label="Assistant">
     <svg width="24" height="17" viewBox="0 0 31 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="0"  y="0"  width="9" height="6" rx="1.5" fill="#95DFDB"/>
       <rect x="11" y="0"  width="9" height="6" rx="1.5" fill="#50C1C1"/>
@@ -683,7 +634,7 @@ select.input { cursor: pointer; }
     </svg>
   </a>
   <div class="nav-pipe"></div>
-  <a class="nav-brand-text" href="#">Virtual Assistant</a>
+  <a class="nav-brand-text" href="#">Assistant</a>
   
   <div class="nav-links-right">
     <div class="nav-volume-wrapper">
@@ -694,9 +645,7 @@ select.input { cursor: pointer; }
     
     <button class="icon-btn" onclick="toggleKeysModal(true)" title="Access Keys">
       <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
-      <span>Keys</span>
     </button>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">Dark</button>
   </div>
 </nav>
 
@@ -805,7 +754,7 @@ select.input { cursor: pointer; }
 
 <!-- FOOTER -->
 <footer class="footer">
-  <span><strong>Virtual Assistant</strong></span>
+  <span><strong>Assistant</strong></span>
   <span class="footer-dot">·</span>
   <span>Roman Zajic</span>
 </footer>
@@ -857,21 +806,7 @@ const toggleBtn = document.getElementById("toggleBtn");
 const chat = document.getElementById("chat");
 const meter = document.getElementById("audioMeter");
 
-/* ── THEME SWITCHER ─────────────────────────────────── */
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  const newTheme = isDark ? 'light' : 'dark';
-  html.setAttribute('data-theme', newTheme);
-  document.getElementById('theme-btn').textContent = isDark ? 'Dark' : 'Light';
-  localStorage.setItem('va_theme', newTheme);
-}
-const savedTheme = localStorage.getItem('va_theme');
-if (savedTheme) {
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  document.getElementById('theme-btn').textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
-}
-
+/* ── UI HELPERS ─────────────────────────────────────── */
 function toggleAccordion(btn) {
   const expanded = btn.getAttribute('aria-expanded') === 'true';
   btn.setAttribute('aria-expanded', String(!expanded));
@@ -934,7 +869,7 @@ async function savePersonasToGitHub() {
 
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
   const payload = {
-    message: "Update personas via Virtual Assistant",
+    message: "Update personas via Assistant",
     content: encodeUTF8toBase64(JSON.stringify(PRESETS, null, 2)),
     branch: "main"
   };
